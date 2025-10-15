@@ -1,0 +1,21 @@
+{
+  "transformer_models": {},
+  "neural_network_models": {
+    "simple_nn": {
+      "mae": 1.0275866719174669,
+      "r2": 0.10051515680325629,
+      "model_path": "/Users/shan/Desktop/Work/Projects/EdPrep AI/edprep-ai-prototype/models/neural_network_simple_nn.pkl"
+    },
+    "deep_nn": {
+      "mae": 1.0250188862629779,
+      "r2": 0.10594683571615182,
+      "model_path": "/Users/shan/Desktop/Work/Projects/EdPrep AI/edprep-ai-prototype/models/neural_network_deep_nn.pkl"
+    },
+    "wide_nn": {
+      "mae": 1.0231489331187942,
+      "r2": 0.1095450737079664,
+      "model_path": "/Users/shan/Desktop/Work/Projects/EdPrep AI/edprep-ai-prototype/models/neural_network_wide_nn.pkl"
+    }
+  },
+  "training_timestamp": "2025-09-25T00:03:32.647095"
+}

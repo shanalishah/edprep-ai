@@ -1,0 +1,20 @@
+{
+  "total_features": 1015,
+  "basic_features": 15,
+  "tfidf_features": 1000,
+  "criteria": [
+    "task_achievement",
+    "coherence_cohesion",
+    "lexical_resource",
+    "grammatical_range",
+    "overall_band_score"
+  ],
+  "best_models": {
+    "task_achievement": "extra_trees",
+    "coherence_cohesion": "extra_trees",
+    "lexical_resource": "extra_trees",
+    "grammatical_range": "elastic_net",
+    "overall_band_score": "gradient_boosting"
+  },
+  "training_date": "2025-09-25T03:57:18.739200"
+}
