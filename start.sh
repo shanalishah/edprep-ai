@@ -56,6 +56,12 @@ if check_port 3000; then
     print_warning "Port 3000 is already in use. Frontend may already be running."
 fi
 
+# Load environment variables
+if [ -f "setup_env.sh" ]; then
+    print_status "Loading environment variables..."
+    source setup_env.sh
+fi
+
 # Start Backend
 print_status "Starting FastAPI backend server..."
 cd backend
