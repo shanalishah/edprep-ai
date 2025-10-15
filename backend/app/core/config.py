@@ -30,7 +30,9 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:3001",
         "http://localhost:3002",
-        "https://yourdomain.com"
+        "https://*.vercel.app",
+        "https://edprep-ai.vercel.app",
+        "https://ielts-master-platform.vercel.app"
     ]
     
     # ML Models
