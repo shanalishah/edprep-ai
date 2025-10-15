@@ -189,3 +189,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .vercel
+
+# Local env files and helpers
+.env
+.env.*
+backend/.env
+backend/.env.*
+setup_env.sh
