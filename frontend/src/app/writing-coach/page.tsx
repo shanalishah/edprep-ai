@@ -26,6 +26,10 @@ export default function WritingCoachPage() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [firstPrompt, setFirstPrompt] = useState<string>("")
   const [starting, setStarting] = useState(false)
+  const [userInput, setUserInput] = useState("")
+  const [draftDelta, setDraftDelta] = useState("")
+  const [lastAgentOutput, setLastAgentOutput] = useState("")
+  const [stepping, setStepping] = useState(false)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -57,6 +61,11 @@ export default function WritingCoachPage() {
                 ) : (
                   <p className="text-gray-500">Start a session to receive the first prompt.</p>
                 )}
+                {lastAgentOutput && (
+                  <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
+                    {lastAgentOutput}
+                  </div>
+                )}
               </div>
               <div className="mt-4">
                 <button
@@ -70,6 +79,43 @@ export default function WritingCoachPage() {
                   className={`px-4 py-2 rounded ${starting? 'bg-gray-200 text-gray-500':'bg-blue-600 text-white hover:bg-blue-700'}`}
                 >
                   {starting? 'Starting...':'Start Session'}
+                </button>
+              </div>
+
+              {/* Step controls */}
+              <div className="mt-6 space-y-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Your reply</label>
+                  <textarea value={userInput} onChange={e=>setUserInput(e.target.value)} className="w-full h-20 border rounded p-2" placeholder="Type a short reply to the agent" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Draft delta (optional)</label>
+                  <textarea value={draftDelta} onChange={e=>setDraftDelta(e.target.value)} className="w-full h-20 border rounded p-2" placeholder="Paste or type any draft changes here" />
+                </div>
+                <button
+                  onClick={async ()=>{
+                    if(!sessionId) return
+                    setStepping(true)
+                    try{
+                      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+                      if (!token) return
+                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/${sessionId}/step`,{
+                        method:'POST',
+                        headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+                        body: JSON.stringify({ user_input: userInput || undefined, draft_delta: draftDelta || undefined })
+                      })
+                      if(res.ok){
+                        const data = await res.json()
+                        setLastAgentOutput(data.turn?.agent_output || '')
+                        setUserInput('')
+                        setDraftDelta('')
+                      }
+                    } finally { setStepping(false) }
+                  }}
+                  disabled={!sessionId || stepping}
+                  className={`px-4 py-2 rounded ${!sessionId||stepping? 'bg-gray-200 text-gray-500':'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                >
+                  {stepping? 'Working...':'Send Step'}
                 </button>
               </div>
             </div>

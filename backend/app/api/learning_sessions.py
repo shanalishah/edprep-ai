@@ -65,10 +65,21 @@ _SESSIONS: dict[str, Session] = {}
 
 def _first_prompt_for_role(role: Role) -> str:
     if role == "questioner":
-        return "What is your main position on the topic? Write one clear thesis sentence."
+        return (
+            "Socratic Guidance — Keep answers brief.\n"
+            "1) What is your main position on the topic?\n"
+            "2) Draft ONE thesis sentence (no more than 25 words)."
+        )
     if role == "explainer":
-        return "A band 7 introduction states a clear position. Example: 'While X, I believe Y because A and B.' Try drafting yours."
-    return "Challenge: Draft an outline with 2 body paragraphs, each with a topic sentence and one example."
+        return (
+            "Explainer — Band 7 intro guidance.\n"
+            "Rule: State a clear position. Template: 'While X, I believe Y because A and B.'\n"
+            "Task: Try drafting your introduction (2–3 sentences)."
+        )
+    return (
+        "Challenger — Small challenge.\n"
+        "Task: Create an outline with 2 body paragraphs. For each: write a topic sentence + one concrete example."
+    )
 
 
 @router.post("/start", response_model=StartSessionResponse)
@@ -113,12 +124,19 @@ async def step_session(session_id: str, payload: StepRequest, current_user: dict
     # Very conservative placeholder behavior for M1 skeleton
     user_input = payload.user_input or ""
     role = db_session.role
+    # Guardrails: short outputs (<= 2 sentences), actionable next step
     if role == "questioner":
-        agent_output = "Thanks. Now, write a topic sentence for your first body paragraph that supports your thesis."
+        agent_output = (
+            "Great. Next: Write ONE topic sentence for Body 1 that directly supports your thesis."
+        )
     elif role == "explainer":
-        agent_output = "Good. Ensure your topic sentence states a clear claim; then add one concrete example."
-    else:
-        agent_output = "Revise your introduction to clearly state your position and preview two supporting points."
+        agent_output = (
+            "Tip: A topic sentence states a claim first, then you add evidence. Now write one clear topic sentence for Body 1."
+        )
+    else:  # challenger
+        agent_output = (
+            "Challenge: Rewrite your introduction to state position in the first sentence and preview two reasons."
+        )
 
     # Update draft version if provided
     draft_version = DraftVersion(content=db_session.latest_draft_content or "", version=db_session.latest_draft_version)
