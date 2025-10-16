@@ -166,10 +166,17 @@ export default function LoginPage() {
                 Development Testing
               </h3>
               <p className="text-yellow-700 text-sm mb-4">Use these test admin accounts for development:</p>
+              <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-3 mb-4">
+                <p className="text-yellow-800 text-sm">
+                  <strong>Note:</strong> Railway production accounts are being set up. 
+                  For now, use <strong>localhost:3000</strong> for full testing with these credentials.
+                </p>
+              </div>
               <div className="grid grid-cols-1 gap-3 text-sm">
                 <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
                   <div className="font-semibold text-yellow-800">Admin 1</div>
                   <div className="text-yellow-700">admin1@edprep.ai / admin123</div>
+                  <div className="text-xs text-yellow-600 mt-1">⚠️ Railway accounts not set up yet</div>
                 </div>
                 <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
                   <div className="font-semibold text-yellow-800">Admin 2</div>
