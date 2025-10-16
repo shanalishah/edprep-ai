@@ -90,7 +90,7 @@ NEXT_PUBLIC_API_URL=https://your-backend-url.com
 ### Optional Variables
 ```
 NEXT_PUBLIC_APP_NAME=IELTS Master Platform
-NEXT_PUBLIC_APP_VERSION=1.0.0
+NEXT_PUBLIC_APP_VERSION=2.0.0
 NEXT_PUBLIC_ENVIRONMENT=production
 ```
 
@@ -197,3 +197,4 @@ npm install @sentry/nextjs
 - [Next.js Deployment](https://nextjs.org/docs/deployment)
 - [Railway Documentation](https://docs.railway.app)
 - [Render Documentation](https://render.com/docs)
+

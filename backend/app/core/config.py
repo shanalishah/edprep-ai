@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     
     # App Info
     APP_NAME: str = "IELTS Master Platform"
-    APP_VERSION: str = "1.0.0"
+    APP_VERSION: str = "2.0.0"
     DEBUG: bool = False
     
     # API Settings
