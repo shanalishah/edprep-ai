@@ -308,6 +308,75 @@ async def get_test_users():
         return {"error": f"Failed to get test users: {str(e)}"}
 
 
+@app.post("/api/v1/admin/setup-mentor-profiles")
+async def setup_mentor_profiles():
+    """Set up mentor profiles for Railway testing"""
+    try:
+        from app.database import get_db
+        from app.models.user import User
+        from app.models.mentorship import UserProfile
+        import json
+        
+        db = next(get_db())
+        
+        # Set up mentor profiles for admin2 and admin3
+        mentor_profiles = [
+            {
+                "user_id": 2,  # admin2
+                "is_available_for_mentorship": True,
+                "mentorship_status": "available",
+                "max_mentees": 3,
+                "bio": "Professional IELTS mentor specializing in writing and speaking. I provide comprehensive support to help students excel in all IELTS components.",
+                "teaching_experience": "5+ years of IELTS mentoring experience",
+                "specializations": ["Writing", "Speaking", "Listening", "Reading"],
+                "certifications": ["IELTS Mentor Certificate", "English Teaching License"],
+                "timezone": "UTC+8",
+                "available_days": ["Monday", "Wednesday", "Friday", "Saturday"],
+                "available_hours": ["afternoon", "evening"]
+            },
+            {
+                "user_id": 3,  # admin3
+                "is_available_for_mentorship": True,
+                "mentorship_status": "available",
+                "max_mentees": 2,
+                "bio": "Experienced IELTS tutor with expertise in academic writing and test strategies. I help students achieve their target band scores.",
+                "teaching_experience": "3+ years of IELTS tutoring experience",
+                "specializations": ["Writing", "Reading", "Test Strategies"],
+                "certifications": ["IELTS Tutor Certificate", "TESOL Certificate"],
+                "timezone": "UTC+5",
+                "available_days": ["Tuesday", "Thursday", "Sunday"],
+                "available_hours": ["morning", "afternoon"]
+            }
+        ]
+        
+        created_profiles = []
+        for profile_data in mentor_profiles:
+            # Check if profile already exists
+            existing_profile = db.query(UserProfile).filter(UserProfile.user_id == profile_data["user_id"]).first()
+            
+            if existing_profile:
+                # Update existing profile
+                for key, value in profile_data.items():
+                    if hasattr(existing_profile, key):
+                        setattr(existing_profile, key, value)
+                created_profiles.append(f"Updated profile for user {profile_data['user_id']}")
+            else:
+                # Create new profile
+                profile = UserProfile(**profile_data)
+                db.add(profile)
+                created_profiles.append(f"Created profile for user {profile_data['user_id']}")
+        
+        db.commit()
+        
+        return {
+            "message": "Mentor profiles set up successfully",
+            "profiles": created_profiles
+        }
+        
+    except Exception as e:
+        return {"error": f"Failed to set up mentor profiles: {str(e)}"}
+
+
 # User dashboard and progress endpoints
 @app.get("/api/v1/user/profile")
 async def get_user_profile(
