@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models.teaching import TeachingSession as TeachingSessionModel, TeachingTurn as TeachingTurnModel, DraftVersion as DraftVersionModel, Checkpoint as CheckpointModel
 from app.services.retrieval import TfidfRetriever
 import os
-from app.main import multi_agent_engine, ai_feedback_generator
+from app.main import multi_agent_engine
 
 
 router = APIRouter(prefix="/api/v1/learning/sessions", tags=["learning-sessions"])
@@ -131,6 +131,9 @@ async def step_session(session_id: str, payload: StepRequest, current_user: dict
     agent_output: str | None = None
 
     # Prefer LLM tutor if available
+    # Import ai_feedback_generator inside the function to get the current value
+    from app.main import ai_feedback_generator
+    
     try:
         if ai_feedback_generator and (getattr(ai_feedback_generator, 'openai_client', None) or getattr(ai_feedback_generator, 'anthropic_client', None)):
             # Build concise, role-specific system prompt
@@ -189,7 +192,7 @@ async def step_session(session_id: str, payload: StepRequest, current_user: dict
             if agent_output:
                 # Append citation if available
                 agent_output = agent_output[:600] + citation
-    except Exception:
+    except Exception as e:
         agent_output = None
 
     # Fallback to deterministic, safe prompts when LLM is not available
