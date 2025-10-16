@@ -2,5 +2,8 @@
   "env": {
     "NEXT_PUBLIC_API_URL": "https://web-production-4d7f.up.railway.app"
   },
-  "buildCommand": "npm run build"
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci --force",
+  "framework": "nextjs",
+  "outputDirectory": ".next"
 }
