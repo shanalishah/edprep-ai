@@ -489,21 +489,7 @@ export default function ChatPage() {
                             position: 'relative'
                           }}>
                           
-                          {/* DEBUG INDICATOR */}
-                          <div style={{
-                            position: 'absolute',
-                            top: '-20px',
-                            left: '0',
-                            fontSize: '10px',
-                            color: isOwn ? '#3b82f6' : '#666',
-                            fontWeight: 'bold',
-                            background: 'white',
-                            padding: '2px 4px',
-                            borderRadius: '4px',
-                            border: '1px solid #ccc'
-                          }}>
-                            {isOwn ? 'MY MESSAGE' : 'THEIR MESSAGE'} (ID: {message.sender_id})
-                          </div>
+                          {/* Removed debug indicator that overlapped message content */}
                           
                           {message.message_type === 'text' ? (
                             <div>
