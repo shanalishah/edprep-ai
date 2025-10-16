@@ -1,6 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+type Role = 'questioner' | 'explainer' | 'challenger'
+type Message = {
+  id: string
+  type: 'agent' | 'user'
+  content: string
+  timestamp: Date
+  suggestedActions?: string[]
+}
 
 async function startSession(role: Role): Promise<{ sessionId: string, firstPrompt: string } | null> {
   try {
@@ -19,125 +28,289 @@ async function startSession(role: Role): Promise<{ sessionId: string, firstPromp
   }
 }
 
-type Role = 'questioner' | 'explainer' | 'challenger'
+async function stepSession(sessionId: string, userInput?: string, draftDelta?: string): Promise<{ agentOutput: string, suggestedActions?: string[] } | null> {
+  try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+    if (!token) return null
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/${sessionId}/step`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_input: userInput || undefined, draft_delta: draftDelta || undefined })
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return { 
+      agentOutput: data.turn?.agent_output || '',
+      suggestedActions: generateSuggestedActions(data.turn?.agent_output || '', data.session?.role || 'questioner')
+    }
+  } catch (e) {
+    return null
+  }
+}
+
+function generateSuggestedActions(agentOutput: string, role: Role): string[] {
+  const output = agentOutput.toLowerCase()
+  
+  if (role === 'questioner') {
+    if (output.includes('thesis') || output.includes('position')) {
+      return ['Write my thesis statement', 'Draft my position', 'Outline my argument']
+    }
+    if (output.includes('example') || output.includes('evidence')) {
+      return ['Add a real example', 'Find supporting evidence', 'Cite a study']
+    }
+    if (output.includes('counter') || output.includes('opposing')) {
+      return ['Address the counterargument', 'Acknowledge other views', 'Refute opposing points']
+    }
+    return ['Continue with my response', 'Ask for clarification', 'Move to next point']
+  }
+  
+  if (role === 'explainer') {
+    if (output.includes('structure') || output.includes('paragraph')) {
+      return ['Write topic sentence', 'Add supporting details', 'Create transition']
+    }
+    if (output.includes('vocabulary') || output.includes('word')) {
+      return ['Use advanced vocabulary', 'Replace simple words', 'Add academic phrases']
+    }
+    if (output.includes('grammar') || output.includes('sentence')) {
+      return ['Fix grammar errors', 'Vary sentence structure', 'Add complex sentences']
+    }
+    return ['Apply this tip', 'Try the example', 'Practice this technique']
+  }
+  
+  if (role === 'challenger') {
+    if (output.includes('stronger') || output.includes('improve')) {
+      return ['Make it stronger', 'Add more detail', 'Be more specific']
+    }
+    if (output.includes('weak') || output.includes('unclear')) {
+      return ['Clarify this point', 'Add explanation', 'Provide evidence']
+    }
+    if (output.includes('missing') || output.includes('add')) {
+      return ['Add missing element', 'Include this component', 'Complete the thought']
+    }
+    return ['Accept the challenge', 'Try a different approach', 'Ask for help']
+  }
+  
+  return ['Continue writing', 'Ask for guidance', 'Check my progress']
+}
 
 export default function WritingCoachPage() {
   const [role, setRole] = useState<Role>('questioner')
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [firstPrompt, setFirstPrompt] = useState<string>("")
+  const [messages, setMessages] = useState<Message[]>([])
   const [starting, setStarting] = useState(false)
   const [userInput, setUserInput] = useState("")
   const [draftDelta, setDraftDelta] = useState("")
-  const [lastAgentOutput, setLastAgentOutput] = useState("")
   const [stepping, setStepping] = useState(false)
   const [sessions, setSessions] = useState<{id:string, role:Role, latest_draft:{content:string, version:number}}[]>([])
   const [drafts, setDrafts] = useState<{content:string, version:number}[]>([])
   const [scores, setScores] = useState<{overall_band_score?: number, task_achievement?: number, coherence_cohesion?: number, lexical_resource?: number, grammatical_range?: number}>({})
   const [checking, setChecking] = useState(false)
+  const [currentDraft, setCurrentDraft] = useState("")
+
+  const handleStartSession = async () => {
+    setStarting(true)
+    const res = await startSession(role)
+    if (res) {
+      setSessionId(res.sessionId)
+      const firstMessage: Message = {
+        id: '1',
+        type: 'agent',
+        content: res.firstPrompt,
+        timestamp: new Date(),
+        suggestedActions: generateSuggestedActions(res.firstPrompt, role)
+      }
+      setMessages([firstMessage])
+    }
+    setStarting(false)
+  }
+
+  const handleStep = async () => {
+    if (!sessionId) return
+    setStepping(true)
+    
+    // Add user message to conversation
+    if (userInput.trim()) {
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        type: 'user',
+        content: userInput,
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, userMessage])
+    }
+    
+    // Update draft if provided
+    if (draftDelta.trim()) {
+      setCurrentDraft(prev => prev + (prev ? '\n\n' : '') + draftDelta)
+    }
+    
+    try {
+      const result = await stepSession(sessionId, userInput || undefined, draftDelta || undefined)
+      if (result) {
+        const agentMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'agent',
+          content: result.agentOutput,
+          timestamp: new Date(),
+          suggestedActions: result.suggestedActions
+        }
+        setMessages(prev => [...prev, agentMessage])
+      }
+    } finally {
+      setUserInput('')
+      setDraftDelta('')
+      setStepping(false)
+    }
+  }
+
+  const handleSuggestedAction = (action: string) => {
+    setUserInput(action)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-4">Writing Coach (M1)</h1>
-
-        <div className="bg-white rounded-lg shadow-sm border">
-          <div className="flex border-b">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900">Writing Coach</h1>
+          <div className="flex space-x-2">
             {(['questioner','explainer','challenger'] as Role[]).map(r => (
               <button
                 key={r}
                 onClick={() => setRole(r)}
-                className={`px-4 py-2 text-sm font-medium border-r last:border-r-0 ${role===r? 'bg-blue-50 text-blue-700':'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-3 py-1 text-sm font-medium rounded ${role===r? 'bg-blue-600 text-white':'bg-white text-gray-600 border hover:bg-gray-50'}`}
               >
                 {r.charAt(0).toUpperCase()+r.slice(1)}
               </button>
             ))}
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-            {/* Chat/Guidance pane */}
-            <div className="p-4 border-r">
-              <div className="text-sm text-gray-700">
-                <p className="mb-2">Role: <span className="font-medium">{role}</span></p>
-                {firstPrompt ? (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded text-blue-800 text-sm">
-                    {firstPrompt}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Conversation Thread */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm border">
+              <div className="p-4 border-b">
+                <h2 className="text-lg font-semibold text-gray-800">Conversation with {role.charAt(0).toUpperCase() + role.slice(1)}</h2>
+                {!sessionId && (
+                  <p className="text-sm text-gray-500 mt-1">Choose a coach role and start a session to begin</p>
+                )}
+              </div>
+              
+              <div className="p-4">
+                {!sessionId ? (
+                  <div className="text-center py-8">
+                    <button
+                      onClick={handleStartSession}
+                      disabled={starting}
+                      className={`px-6 py-3 rounded-lg text-lg font-semibold ${starting? 'bg-gray-200 text-gray-500':'bg-blue-600 text-white hover:bg-blue-700'}`}
+                    >
+                      {starting? 'Starting Session...':'Start Session'}
+                    </button>
+                    <p className="text-sm text-gray-500 mt-2">
+                      {role === 'questioner' && 'I\'ll guide you with Socratic questions to develop your ideas'}
+                      {role === 'explainer' && 'I\'ll provide clear explanations and examples from IELTS materials'}
+                      {role === 'challenger' && 'I\'ll push you to strengthen weak points and add depth'}
+                    </p>
                   </div>
                 ) : (
-                  <p className="text-gray-500">Start a session to receive the first prompt.</p>
-                )}
-                {lastAgentOutput && (
-                  <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
-                    {lastAgentOutput}
+                  <div className="space-y-4">
+                    {/* Messages */}
+                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                      {messages.map((message) => (
+                        <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            message.type === 'user' 
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            <div className="text-sm">{message.content}</div>
+                            <div className={`text-xs mt-1 ${
+                              message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
+                            }`}>
+                              {message.timestamp.toLocaleTimeString()}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Suggested Actions */}
+                    {messages.length > 0 && messages[messages.length - 1].suggestedActions && (
+                      <div className="border-t pt-4">
+                        <p className="text-sm text-gray-600 mb-2">Suggested actions:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {messages[messages.length - 1].suggestedActions!.map((action, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleSuggestedAction(action)}
+                              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full border"
+                            >
+                              {action}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Input Area */}
+                    <div className="border-t pt-4 space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Your response</label>
+                        <textarea 
+                          value={userInput} 
+                          onChange={e => setUserInput(e.target.value)} 
+                          className="w-full h-20 border rounded-lg p-3 text-sm" 
+                          placeholder="Type your response to the coach..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Draft changes (optional)</label>
+                        <textarea 
+                          value={draftDelta} 
+                          onChange={e => setDraftDelta(e.target.value)} 
+                          className="w-full h-20 border rounded-lg p-3 text-sm" 
+                          placeholder="Paste any new writing here..."
+                        />
+                      </div>
+                      <button
+                        onClick={handleStep}
+                        disabled={stepping}
+                        className={`w-full py-2 px-4 rounded-lg font-medium ${stepping? 'bg-gray-200 text-gray-500':'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                      >
+                        {stepping? 'Sending...':'Send Response'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
-              <div className="mt-4">
-                <button
-                  onClick={async () => {
-                    setStarting(true)
-                    const res = await startSession(role)
-                    if (res) { setSessionId(res.sessionId); setFirstPrompt(res.firstPrompt) }
-                    setStarting(false)
-                  }}
-                  disabled={starting}
-                  className={`px-4 py-2 rounded ${starting? 'bg-gray-200 text-gray-500':'bg-blue-600 text-white hover:bg-blue-700'}`}
-                >
-                  {starting? 'Starting...':'Start Session'}
-                </button>
-              </div>
+            </div>
+          </div>
 
-              {/* Step controls */}
-              <div className="mt-6 space-y-3">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Your reply</label>
-                  <textarea value={userInput} onChange={e=>setUserInput(e.target.value)} className="w-full h-20 border rounded p-2" placeholder="Type a short reply to the agent" />
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Current Draft */}
+            <div className="bg-white rounded-lg shadow-sm border">
+              <div className="p-4 border-b">
+                <h3 className="text-lg font-semibold text-gray-800">Current Draft</h3>
+              </div>
+              <div className="p-4">
+                <textarea
+                  value={currentDraft}
+                  onChange={e => setCurrentDraft(e.target.value)}
+                  className="w-full h-48 border rounded-lg p-3 text-sm"
+                  placeholder="Your essay will appear here as you write..."
+                />
+                <div className="mt-2 text-xs text-gray-500">
+                  {currentDraft.length} characters
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Draft delta (optional)</label>
-                  <textarea value={draftDelta} onChange={e=>setDraftDelta(e.target.value)} className="w-full h-20 border rounded p-2" placeholder="Paste or type any draft changes here" />
-                </div>
-                <button
-                  onClick={async ()=>{
-                    if(!sessionId) return
-                    setStepping(true)
-                    try{
-                      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
-                      if (!token) return
-                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/${sessionId}/step`,{
-                        method:'POST',
-                        headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
-                        body: JSON.stringify({ user_input: userInput || undefined, draft_delta: draftDelta || undefined })
-                      })
-                      if(res.ok){
-                        const data = await res.json()
-                        setLastAgentOutput(data.turn?.agent_output || '')
-                        setUserInput('')
-                        setDraftDelta('')
-                      }
-                    } finally { setStepping(false) }
-                  }}
-                  disabled={!sessionId || stepping}
-                  className={`px-4 py-2 rounded ${!sessionId||stepping? 'bg-gray-200 text-gray-500':'bg-emerald-600 text-white hover:bg-emerald-700'}`}
-                >
-                  {stepping? 'Working...':'Send Step'}
-                </button>
               </div>
             </div>
 
-            {/* Draft editor pane */}
-            <div className="p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Draft</label>
-              <textarea
-                disabled
-                className="w-full h-64 border rounded p-3 text-gray-500 bg-gray-50 cursor-not-allowed"
-                placeholder="Editing will be enabled in M2"
-              />
-              <div className="mt-3 text-xs text-gray-500">Checkpoints and scoring will be enabled in M2.</div>
-
-              {/* Rubric Panel */}
-              <div className="mt-4 border rounded p-3 bg-white">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-sm font-semibold text-gray-800">Rubric</h2>
+            {/* Rubric */}
+            <div className="bg-white rounded-lg shadow-sm border">
+              <div className="p-4 border-b">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800">Rubric</h3>
                   <button
                     disabled={!sessionId || checking}
                     onClick={async()=>{
@@ -151,30 +324,45 @@ export default function WritingCoachPage() {
                           const data = await res.json()
                           const s = data.scores || {}
                           setScores({ overall_band_score: s.overall_band_score, task_achievement: s.task_achievement, coherence_cohesion: s.coherence_cohesion, lexical_resource: s.lexical_resource, grammatical_range: s.grammatical_range })
-                          // Show diff, if any, in drafts panel by appending a pseudo-version
-                          if (data.diff) {
-                            setDrafts(d => [...d, { content: data.diff, version: (d[d.length-1]?.version ?? 0) + 1 }])
-                          }
                         }
                       } finally { setChecking(false) }
                     }}
-                    className={`text-xs px-2 py-1 rounded ${!sessionId||checking? 'bg-gray-200 text-gray-500':'bg-purple-600 text-white hover:bg-purple-700'}`}
+                    className={`text-xs px-3 py-1 rounded ${!sessionId||checking? 'bg-gray-200 text-gray-500':'bg-purple-600 text-white hover:bg-purple-700'}`}
                   >{checking? 'Checking...':'Checkpoint'}</button>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-                  <div>Overall: <span className="font-medium">{scores.overall_band_score ?? '-'}</span></div>
-                  <div>Task Achievement: <span className="font-medium">{scores.task_achievement ?? '-'}</span></div>
-                  <div>Coherence & Cohesion: <span className="font-medium">{scores.coherence_cohesion ?? '-'}</span></div>
-                  <div>Lexical Resource: <span className="font-medium">{scores.lexical_resource ?? '-'}</span></div>
-                  <div>Grammatical Range: <span className="font-medium">{scores.grammatical_range ?? '-'}</span></div>
-                </div>
-                <div className="mt-2 text-[10px] text-gray-500">Target (demo): 7.0 across criteria</div>
               </div>
+              <div className="p-4">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Overall:</span>
+                    <span className="font-medium">{scores.overall_band_score ?? '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Task Achievement:</span>
+                    <span className="font-medium">{scores.task_achievement ?? '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Coherence & Cohesion:</span>
+                    <span className="font-medium">{scores.coherence_cohesion ?? '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Lexical Resource:</span>
+                    <span className="font-medium">{scores.lexical_resource ?? '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Grammatical Range:</span>
+                    <span className="font-medium">{scores.grammatical_range ?? '-'}</span>
+                  </div>
+                </div>
+                <div className="mt-3 text-xs text-gray-500">Target: 7.0+ across all criteria</div>
+              </div>
+            </div>
 
-              {/* History */}
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-sm font-semibold text-gray-800">Your Sessions</h2>
+            {/* Session History */}
+            <div className="bg-white rounded-lg shadow-sm border">
+              <div className="p-4 border-b">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800">Sessions</h3>
                   <button
                     className="text-xs text-blue-600 hover:underline"
                     onClick={async()=>{
@@ -185,6 +373,8 @@ export default function WritingCoachPage() {
                     }}
                   >Refresh</button>
                 </div>
+              </div>
+              <div className="p-4">
                 <div className="space-y-2">
                   {sessions.map(s=> (
                     <div key={s.id} className="border rounded p-2 text-sm">
@@ -203,21 +393,6 @@ export default function WritingCoachPage() {
                     </div>
                   ))}
                 </div>
-
-                {drafts.length>0 && (
-                  <div className="mt-4">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-1">Draft Versions</h3>
-                    <div className="space-y-2 max-h-48 overflow-auto border rounded p-2 bg-gray-50">
-                      {drafts.map(d => (
-                        <div key={d.version} className="text-xs">
-                          <div className="font-medium">v{d.version}</div>
-                          <pre className="whitespace-pre-wrap">{d.content}</pre>
-                          <hr className="my-2" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
