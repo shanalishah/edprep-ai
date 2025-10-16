@@ -106,6 +106,83 @@ export default function WritingCoachPage() {
   const [scores, setScores] = useState<{overall_band_score?: number, task_achievement?: number, coherence_cohesion?: number, lexical_resource?: number, grammatical_range?: number}>({})
   const [checking, setChecking] = useState(false)
   const [currentDraft, setCurrentDraft] = useState("")
+  const [wizardMode, setWizardMode] = useState<boolean>(false)
+  const wizardSteps = [
+    { key: 'intro', label: 'Introduction' },
+    { key: 'outline', label: 'Outline' },
+    { key: 'body1', label: 'Body Paragraph 1' },
+    { key: 'body2', label: 'Body Paragraph 2' },
+    { key: 'conclusion', label: 'Conclusion' }
+  ] as const
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0)
+
+  const wizardScaffolds: Record<typeof wizardSteps[number]['key'], { hint: string, responseTemplate: Record<Role, string>, draftTemplate: Record<Role, string> }> = {
+    intro: {
+      hint: 'State your position clearly and preview your two main reasons.',
+      responseTemplate: {
+        questioner: 'My position is that ____. The two main reasons are ____ and ____.',
+        explainer: 'I will state a clear thesis and preview two reasons.',
+        challenger: 'I will make my stance specific and debatable.'
+      },
+      draftTemplate: {
+        questioner: 'In today\'s world, ____. While some argue ____, I believe ____ because ____ and ____.',
+        explainer: 'This essay argues that ____. This is because ____ and ____.',
+        challenger: 'I contend that ____, primarily due to ____ and ____, despite common objections.'
+      }
+    },
+    outline: {
+      hint: 'Plan topic sentences and evidence for each body paragraph.',
+      responseTemplate: {
+        questioner: 'Body 1: topic sentence ____, evidence ____. Body 2: topic sentence ____, evidence ____.',
+        explainer: 'I will outline two paragraphs with topic sentences and examples.',
+        challenger: 'I will ensure each paragraph advances a distinct, non-overlapping reason.'
+      },
+      draftTemplate: {
+        questioner: '- BP1: ____ (TS). Support: ____.\n- BP2: ____ (TS). Support: ____.',
+        explainer: 'Outline:\n1) ____. Example: ____.\n2) ____. Example: ____.',
+        challenger: 'Plan:\n- Para 1 proves ____ with ____.\n- Para 2 proves ____ with ____.'
+      }
+    },
+    body1: {
+      hint: 'Write Body 1: clear topic sentence, explanation, specific example, mini-conclusion.',
+      responseTemplate: {
+        questioner: 'I will write Body 1 focusing on ____, with an example about ____.',
+        explainer: 'I will use the pattern: TS → Explain → Example → Therefore.',
+        challenger: 'I will avoid vague claims and add concrete, verifiable detail.'
+      },
+      draftTemplate: {
+        questioner: 'Firstly, ____. This matters because ____. For example, ____. Therefore, ____.',
+        explainer: 'First, ____. This can be seen in ____. Therefore, this supports the position because ____.',
+        challenger: 'To begin with, ____. Consider ____, where ____. Consequently, ____.'
+      }
+    },
+    body2: {
+      hint: 'Write Body 2: second reason, different from Body 1; add counterpoint if possible.',
+      responseTemplate: {
+        questioner: 'I will write Body 2 focusing on a distinct reason: ____.',
+        explainer: 'I will follow TS → Explain → Example → Therefore again, avoiding repetition.',
+        challenger: 'I will address a likely counterargument and then refute it.'
+      },
+      draftTemplate: {
+        questioner: 'Moreover, ____. This is because ____. For instance, ____. Hence, ____.',
+        explainer: 'Secondly, ____. For example, ____. Therefore, ____.',
+        challenger: 'Admittedly, some argue ____. However, ____. Therefore, ____.'
+      }
+    },
+    conclusion: {
+      hint: 'Summarise your reasons and restate your position without new arguments.',
+      responseTemplate: {
+        questioner: 'I will summarise both reasons and restate the thesis concisely.',
+        explainer: 'I will paraphrase the thesis and synthesise the two reasons.',
+        challenger: 'I will avoid adding any new points and keep it decisive.'
+      },
+      draftTemplate: {
+        questioner: 'In summary, ____. Because ____ and ____, it is clear that ____.',
+        explainer: 'In conclusion, this essay has shown that ____ due to ____ and ____.',
+        challenger: 'Taken together, the evidence for ____ and ____ demonstrates that ____.'
+      }
+    }
+  }
 
   const handleStartSession = async () => {
     setStarting(true)
@@ -182,6 +259,12 @@ export default function WritingCoachPage() {
                 {r.charAt(0).toUpperCase()+r.slice(1)}
               </button>
             ))}
+            <button
+              onClick={() => setWizardMode(v => !v)}
+              className={`px-3 py-1 text-sm font-medium rounded ${wizardMode? 'bg-emerald-600 text-white':'bg-white text-gray-600 border hover:bg-gray-50'}`}
+            >
+              {wizardMode ? 'Wizard: On' : 'Wizard: Off'}
+            </button>
           </div>
         </div>
 
@@ -214,6 +297,45 @@ export default function WritingCoachPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {/* Guided Wizard */}
+                    {wizardMode && (
+                      <div className="border rounded-lg p-4 bg-amber-50 border-amber-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-sm font-semibold text-amber-800">Guided Wizard</div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              className="text-xs px-2 py-1 rounded border bg-white hover:bg-gray-50"
+                              onClick={() => setCurrentStepIndex(i => Math.max(0, i - 1))}
+                              disabled={currentStepIndex===0}
+                            >Prev</button>
+                            <div className="text-xs text-amber-700">
+                              Step {currentStepIndex+1} / {wizardSteps.length}: {wizardSteps[currentStepIndex].label}
+                            </div>
+                            <button
+                              className="text-xs px-2 py-1 rounded border bg-white hover:bg-gray-50"
+                              onClick={() => setCurrentStepIndex(i => Math.min(wizardSteps.length-1, i + 1))}
+                              disabled={currentStepIndex===wizardSteps.length-1}
+                            >Next</button>
+                          </div>
+                        </div>
+                        <div className="text-xs text-amber-900 mb-2">{wizardScaffolds[wizardSteps[currentStepIndex].key].hint}</div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            className="text-xs px-3 py-1 rounded bg-white border hover:bg-gray-50"
+                            onClick={() => setUserInput(wizardScaffolds[wizardSteps[currentStepIndex].key].responseTemplate[role])}
+                          >Use response scaffold</button>
+                          <button
+                            className="text-xs px-3 py-1 rounded bg-white border hover:bg-gray-50"
+                            onClick={() => setDraftDelta(prev => wizardScaffolds[wizardSteps[currentStepIndex].key].draftTemplate[role])}
+                          >Use draft scaffold</button>
+                          <button
+                            className="text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                            onClick={handleStep}
+                          >Complete step</button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Messages */}
                     <div className="space-y-4 max-h-96 overflow-y-auto">
                       {messages.map((message) => (
