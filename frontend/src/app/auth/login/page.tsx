@@ -166,25 +166,30 @@ export default function LoginPage() {
                 Development Testing
               </h3>
               <p className="text-yellow-700 text-sm mb-4">Use these test admin accounts for development:</p>
-              <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-3 mb-4">
-                <p className="text-yellow-800 text-sm">
-                  <strong>Note:</strong> Railway production accounts are being set up. 
-                  For now, use <strong>localhost:3000</strong> for full testing with these credentials.
+              <div className="bg-green-100 border border-green-300 rounded-lg p-3 mb-4">
+                <p className="text-green-800 text-sm">
+                  <strong>✅ Railway accounts created!</strong> Use these credentials for live testing:
                 </p>
+                <div className="mt-2 text-sm">
+                  <p><strong>Live Site:</strong> admin1@edprep.ai / test</p>
+                  <p><strong>Local:</strong> admin1@edprep.ai / admin123</p>
+                </div>
               </div>
               <div className="grid grid-cols-1 gap-3 text-sm">
                 <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
                   <div className="font-semibold text-yellow-800">Admin 1</div>
                   <div className="text-yellow-700">admin1@edprep.ai / admin123</div>
-                  <div className="text-xs text-yellow-600 mt-1">⚠️ Railway accounts not set up yet</div>
+                  <div className="text-xs text-green-600 mt-1">✅ Railway: admin1@edprep.ai / test</div>
                 </div>
                 <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
                   <div className="font-semibold text-yellow-800">Admin 2</div>
                   <div className="text-yellow-700">admin2@edprep.ai / admin123</div>
+                  <div className="text-xs text-green-600 mt-1">✅ Railway: admin2@edprep.ai / test</div>
                 </div>
                 <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
                   <div className="font-semibold text-yellow-800">Admin 3</div>
                   <div className="text-yellow-700">admin3@edprep.ai / admin123</div>
+                  <div className="text-xs text-green-600 mt-1">✅ Railway: admin3@edprep.ai / test</div>
                 </div>
               </div>
             </div>
