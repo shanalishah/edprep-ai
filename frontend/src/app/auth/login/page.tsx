@@ -112,6 +112,7 @@ export default function LoginPage() {
             </div>
             <nav className="hidden md:flex space-x-8">
               <Link href="/test-library" className="text-gray-600 hover:text-gray-900 transition-colors">Test Library</Link>
+              <Link href="/writing-coach" className="text-gray-600 hover:text-gray-900 transition-colors">Writing Coach</Link>
               <Link href="/tips" className="text-gray-600 hover:text-gray-900 transition-colors">Tips</Link>
               <Link href="/analytics" className="text-gray-600 hover:text-gray-900 transition-colors">Analytics</Link>
             </nav>

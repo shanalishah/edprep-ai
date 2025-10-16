@@ -167,6 +167,12 @@ export default function DashboardHomePage() {
                 Test Library
               </Link>
               <Link 
+                href="/writing-coach"
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
+              >
+                Writing Coach
+              </Link>
+              <Link 
                 href="/mentorship"
                 className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
               >

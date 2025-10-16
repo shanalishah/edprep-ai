@@ -124,6 +124,11 @@ export default function HomePage() {
 
   const features = [
     {
+      icon: PencilIcon,
+      title: "AI Writing Coach",
+      description: "Get personalized feedback from our AI tutors with three coaching styles: Questioner, Explainer, and Challenger."
+    },
+    {
       icon: ChartBarIcon,
       title: "Real-time AI Scoring",
       description: "Get instant, accurate band scores with detailed feedback on all four IELTS skills."
@@ -196,6 +201,7 @@ export default function HomePage() {
             </div>
             <nav className="hidden md:flex space-x-8">
               <Link href="/test-library" className="text-gray-600 hover:text-gray-900 transition-colors">Test Library</Link>
+              <Link href="/writing-coach" className="text-gray-600 hover:text-gray-900 transition-colors">Writing Coach</Link>
               <Link href="/tips" className="text-gray-600 hover:text-gray-900 transition-colors">Tips</Link>
               <Link href="/analytics" className="text-gray-600 hover:text-gray-900 transition-colors">Analytics</Link>
             </nav>
@@ -290,6 +296,84 @@ export default function HomePage() {
                 }`}
               />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Writing Coach Section */}
+      <section className="py-20 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-medium text-blue-800 mb-4"
+            >
+              <SparklesIcon className="h-4 w-4 mr-2" />
+              NEW: AI Writing Coach
+            </motion.div>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Master IELTS Writing with AI Tutors
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+              Get personalized feedback from three specialized AI coaches. Each with their own teaching style to help you improve your writing skills and achieve your target band score.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            {[
+              {
+                title: "Questioner",
+                description: "Socratic method with templates and immediate writing tasks",
+                color: "from-blue-500 to-blue-600",
+                icon: "❓"
+              },
+              {
+                title: "Explainer", 
+                description: "Rule-based teaching with examples and practice exercises",
+                color: "from-green-500 to-green-600",
+                icon: "📚"
+              },
+              {
+                title: "Challenger",
+                description: "Improvement-focused with specific solutions and rewrites",
+                color: "from-purple-500 to-purple-600", 
+                icon: "💪"
+              }
+            ].map((coach, index) => (
+              <motion.div
+                key={coach.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+              >
+                <div className={`w-16 h-16 bg-gradient-to-r ${coach.color} rounded-lg flex items-center justify-center mb-4 text-2xl`}>
+                  {coach.icon}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{coach.title}</h3>
+                <p className="text-gray-600">{coach.description}</p>
+              </motion.div>
+            ))}
+          </div>
+          
+          <div className="text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+            >
+              <Link 
+                href="/writing-coach"
+                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                <PencilIcon className="h-5 w-5 mr-2" />
+                Try Writing Coach Now
+                <ArrowRightIcon className="h-5 w-5 ml-2" />
+              </Link>
+            </motion.div>
           </div>
         </div>
       </section>
