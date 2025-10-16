@@ -177,25 +177,25 @@ export default function LoginPage() {
                   <p className="text-orange-700">
                     <strong>Solution:</strong> Use localhost:3000 for full testing
                   </p>
-                  <p className="font-mono bg-orange-50 p-2 rounded text-orange-800">
-                    localhost:3000 → admin1@edprep.ai / admin123
-                  </p>
+             <p className="font-mono bg-orange-50 p-2 rounded text-orange-800">
+               localhost:3000 → admin1@edprep.ai / test
+             </p>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3 text-sm">
                 <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
                   <div className="font-semibold text-yellow-800">Admin 1</div>
-                  <div className="text-yellow-700">admin1@edprep.ai / admin123</div>
+                  <div className="text-yellow-700">admin1@edprep.ai / test</div>
                   <div className="text-xs text-orange-600 mt-1">⚠️ Railway: Database issue</div>
                 </div>
                 <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
                   <div className="font-semibold text-yellow-800">Admin 2</div>
-                  <div className="text-yellow-700">admin2@edprep.ai / admin123</div>
+                  <div className="text-yellow-700">admin2@edprep.ai / test</div>
                   <div className="text-xs text-orange-600 mt-1">⚠️ Railway: Database issue</div>
                 </div>
                 <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
                   <div className="font-semibold text-yellow-800">Admin 3</div>
-                  <div className="text-yellow-700">admin3@edprep.ai / admin123</div>
+                  <div className="text-yellow-700">admin3@edprep.ai / test</div>
                   <div className="text-xs text-orange-600 mt-1">⚠️ Railway: Database issue</div>
                 </div>
               </div>

@@ -257,8 +257,13 @@ async def create_test_user(
         
         # Create new user - use simple password for testing
         # For Railway deployment, use a simple password that works
-        simple_password = "test123"
-        hashed_password = get_password_hash(simple_password)
+        simple_password = "test"
+        try:
+            hashed_password = get_password_hash(simple_password)
+        except Exception as e:
+            # Fallback to SHA256 if bcrypt fails
+            import hashlib
+            hashed_password = hashlib.sha256(simple_password.encode()).hexdigest()
         new_user = User(
             email=email,
             username=username,
