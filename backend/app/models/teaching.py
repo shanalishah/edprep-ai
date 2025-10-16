@@ -62,3 +62,14 @@ class DraftVersion(Base):
     session = relationship("TeachingSession", back_populates="drafts")
 
 
+class Checkpoint(Base):
+    __tablename__ = "teaching_checkpoints"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("teaching_sessions.id"), nullable=False, index=True)
+    draft_version = Column(Integer, nullable=False)
+    scores = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+

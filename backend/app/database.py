@@ -50,6 +50,7 @@ def create_tables():
     # Import all models to ensure they are registered
     from app.models.user import User, UserProgress, UserSession, Base
     from app.models.essay_submission import EssaySubmission, UserMistake, StudyPlan, LearningSession
+    from app.models.teaching import TeachingSession, TeachingTurn, DraftVersion, Checkpoint
     from app.models.mentorship import MentorshipConnection, MentorshipMessage, MentorshipSession, UserProfile
     
     # Create tables using single Base class

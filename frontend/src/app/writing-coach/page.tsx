@@ -151,6 +151,10 @@ export default function WritingCoachPage() {
                           const data = await res.json()
                           const s = data.scores || {}
                           setScores({ overall_band_score: s.overall_band_score, task_achievement: s.task_achievement, coherence_cohesion: s.coherence_cohesion, lexical_resource: s.lexical_resource, grammatical_range: s.grammatical_range })
+                          // Show diff, if any, in drafts panel by appending a pseudo-version
+                          if (data.diff) {
+                            setDrafts(d => [...d, { content: data.diff, version: (d[d.length-1]?.version ?? 0) + 1 }])
+                          }
                         }
                       } finally { setChecking(false) }
                     }}

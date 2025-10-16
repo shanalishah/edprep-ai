@@ -5,7 +5,7 @@ from typing import List, Optional, Literal
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.teaching import TeachingSession as TeachingSessionModel, TeachingTurn as TeachingTurnModel, DraftVersion as DraftVersionModel
+from app.models.teaching import TeachingSession as TeachingSessionModel, TeachingTurn as TeachingTurnModel, DraftVersion as DraftVersionModel, Checkpoint as CheckpointModel
 from app.services.retrieval import TfidfRetriever
 import os
 from app.main import multi_agent_engine
@@ -219,6 +219,7 @@ class CheckpointResponse(BaseModel):
     scores: dict
     overall_band_score: float
     assessment_method: str
+    diff: str | None = None
 
 
 @router.post("/{session_id}/checkpoint", response_model=CheckpointResponse)
@@ -233,10 +234,34 @@ async def checkpoint(session_id: str, current_user: dict = Depends(get_current_u
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Scoring engine unavailable")
     # Use existing scoring engine; prompt optional
     result = multi_agent_engine.score_essay("", draft, db_session.task_type)
+    scores = result.get("scores", {})
+
+    # Persist checkpoint
+    cp = CheckpointModel(session_id=db_session.id, draft_version=db_session.latest_draft_version or 0, scores=scores)
+    db.add(cp)
+    db.commit()
+
+    # Compute simple diff against previous draft version
+    prev = None
+    if (db_session.latest_draft_version or 0) > 0:
+        prev_ver = max(0, (db_session.latest_draft_version or 1) - 1)
+        prev_row = db.query(DraftVersionModel).filter(DraftVersionModel.session_id == db_session.id, DraftVersionModel.version == prev_ver).first()
+        prev = prev_row.content if prev_row else None
+    diff_text = None
+    try:
+        if prev is not None:
+            import difflib
+            diff = difflib.unified_diff((prev or '').splitlines(), (draft or '').splitlines(), lineterm='')
+            # Keep short diff
+            diff_text = "\n".join(list(diff)[:80])
+    except Exception:
+        diff_text = None
+
     return CheckpointResponse(
-        scores=result.get("scores", {}),
-        overall_band_score=result.get("scores", {}).get("overall_band_score", 0.0),
-        assessment_method=result.get("assessment_method", "multi_agent")
+        scores=scores,
+        overall_band_score=scores.get("overall_band_score", 0.0),
+        assessment_method=result.get("assessment_method", "multi_agent"),
+        diff=diff_text
     )
 
 
