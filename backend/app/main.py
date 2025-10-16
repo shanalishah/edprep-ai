@@ -243,7 +243,7 @@ async def create_test_user(
     try:
         from app.database import get_db
         from app.models.user import User
-        from app.core.security import get_password_hash
+        import hashlib
         
         db = next(get_db())
         
@@ -255,15 +255,10 @@ async def create_test_user(
         if existing_user:
             return {"message": f"User {email} already exists", "status": "exists"}
         
-        # Create new user - use simple password for testing
-        # For Railway deployment, use a simple password that works
+        # Create new user - use SHA256 for Railway compatibility
         simple_password = "test"
-        try:
-            hashed_password = get_password_hash(simple_password)
-        except Exception as e:
-            # Fallback to SHA256 if bcrypt fails
-            import hashlib
-            hashed_password = hashlib.sha256(simple_password.encode()).hexdigest()
+        hashed_password = hashlib.sha256(simple_password.encode()).hexdigest()
+        
         new_user = User(
             email=email,
             username=username,
@@ -280,7 +275,8 @@ async def create_test_user(
         return {
             "message": f"Test user {email} created successfully",
             "user_id": new_user.id,
-            "role": new_user.role
+            "role": new_user.role,
+            "password": simple_password
         }
         
     except Exception as e:
