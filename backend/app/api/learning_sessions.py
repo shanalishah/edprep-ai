@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models.teaching import TeachingSession as TeachingSessionModel, TeachingTurn as TeachingTurnModel, DraftVersion as DraftVersionModel, Checkpoint as CheckpointModel
 from app.services.retrieval import TfidfRetriever
 import os
-from app.main import multi_agent_engine
+from app.main import multi_agent_engine, ai_feedback_generator
 
 
 router = APIRouter(prefix="/api/v1/learning/sessions", tags=["learning-sessions"])
@@ -124,32 +124,93 @@ async def step_session(session_id: str, payload: StepRequest, current_user: dict
     if not db_session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    # Very conservative placeholder behavior for M1 skeleton
+    # Generate the next tutor message
     user_input = payload.user_input or ""
     role = db_session.role
-    # Guardrails: short outputs (<= 2 sentences), actionable next step
-    if role == "questioner":
-        agent_output = (
-            "Great. Next: Write ONE topic sentence for Body 1 that directly supports your thesis."
-        )
-    elif role == "explainer":
-        # Try retrieval to add a citation
-        agent_output = "Tip: A topic sentence states a claim first, then you add evidence. Now write one clear topic sentence for Body 1."
-        try:
-            index_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'retrieval_index.json'))
-            retriever = TfidfRetriever()
-            if os.path.exists(index_path):
-                retriever.load(index_path)
-                hits = retriever.search("IELTS Task 2 topic sentence guidance", k=1)
-                if hits:
-                    h = hits[0]
-                    agent_output += f"\nSource: {os.path.basename(h.source)} p.{h.page}"
-        except Exception:
-            pass
-    else:  # challenger
-        agent_output = (
-            "Challenge: Rewrite your introduction to state position in the first sentence and preview two reasons."
-        )
+
+    agent_output: str | None = None
+
+    # Prefer LLM tutor if available
+    try:
+        if ai_feedback_generator and (getattr(ai_feedback_generator, 'openai_client', None) or getattr(ai_feedback_generator, 'anthropic_client', None)):
+            # Build concise, role-specific system prompt
+            role_style = {
+                "questioner": "You are a Socratic IELTS Writing coach. Ask one focused question at a time to move the essay forward. Keep to <=2 sentences.",
+                "explainer": "You are a concise IELTS Writing coach. Give one clear instruction or tip with a tiny example. Keep to <=2 sentences.",
+                "challenger": "You are a tough but fair IELTS Writing coach. Set one small challenge to strengthen the draft. Keep to <=2 sentences."
+            }[role]
+
+            # Retrieve a short citation when helpful (best-effort)
+            citation = ""
+            try:
+                index_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'retrieval_index.json'))
+                if os.path.exists(index_path):
+                    retriever = TfidfRetriever()
+                    retriever.load(index_path)
+                    hits = retriever.search("IELTS Task 2 writing guidance topic sentence structure coherence cohesion band 7", k=1)
+                    if hits:
+                        h = hits[0]
+                        citation = f"\nSource: {os.path.basename(h.source)} p.{h.page}"
+            except Exception:
+                citation = ""
+
+            # Provide minimal context (last draft snapshot + latest user input)
+            context = (db_session.latest_draft_content or "").strip()
+            context = context[-1500:] if context else ""
+
+            # Compose prompt
+            user_prompt = (
+                "Context (latest draft excerpt, may be empty):\n" + (context or "<empty>") +
+                "\n\nLearner input (if any this turn):\n" + (user_input or "<none>") +
+                "\n\nInstruction: Respond as the coach for role '" + role + "'. Give one actionable next step to progress the essay now. Do not write the essay for the learner."
+            )
+
+            # Call OpenAI first, otherwise Anthropic; keep output short
+            if getattr(ai_feedback_generator, 'openai_client', None):
+                response = ai_feedback_generator.openai_client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": role_style},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=180
+                )
+                agent_output = (response.choices[0].message.content or "").strip()
+            elif getattr(ai_feedback_generator, 'anthropic_client', None):
+                response = ai_feedback_generator.anthropic_client.messages.create(
+                    model="claude-3-sonnet-20240229",
+                    max_tokens=180,
+                    temperature=0.3,
+                    messages=[{"role": "user", "content": role_style + "\n\n" + user_prompt}]
+                )
+                agent_output = (response.content[0].text or "").strip()
+
+            if agent_output:
+                # Append citation if available
+                agent_output = agent_output[:600] + citation
+    except Exception:
+        agent_output = None
+
+    # Fallback to deterministic, safe prompts when LLM is not available
+    if not agent_output:
+        if role == "questioner":
+            agent_output = "Great. Next: Write ONE topic sentence for Body 1 that directly supports your thesis."
+        elif role == "explainer":
+            agent_output = "Tip: A topic sentence states a claim first, then you add evidence. Now write one clear topic sentence for Body 1."
+            try:
+                index_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'retrieval_index.json'))
+                retriever = TfidfRetriever()
+                if os.path.exists(index_path):
+                    retriever.load(index_path)
+                    hits = retriever.search("IELTS Task 2 topic sentence guidance", k=1)
+                    if hits:
+                        h = hits[0]
+                        agent_output += f"\nSource: {os.path.basename(h.source)} p.{h.page}"
+            except Exception:
+                pass
+        else:  # challenger
+            agent_output = "Challenge: Rewrite your introduction to state position in the first sentence and preview two reasons."
 
     # Update draft version if provided
     draft_version = DraftVersion(content=db_session.latest_draft_content or "", version=db_session.latest_draft_version)
