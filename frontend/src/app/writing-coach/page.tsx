@@ -2,10 +2,30 @@
 
 import { useState } from 'react'
 
+async function startSession(role: Role): Promise<{ sessionId: string, firstPrompt: string } | null> {
+  try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+    if (!token) return null
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/start`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, task_type: 'Task 2' })
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return { sessionId: data.session.id, firstPrompt: data.first_prompt }
+  } catch (e) {
+    return null
+  }
+}
+
 type Role = 'questioner' | 'explainer' | 'challenger'
 
 export default function WritingCoachPage() {
   const [role, setRole] = useState<Role>('questioner')
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [firstPrompt, setFirstPrompt] = useState<string>("")
+  const [starting, setStarting] = useState(false)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -30,14 +50,26 @@ export default function WritingCoachPage() {
             <div className="p-4 border-r">
               <div className="text-sm text-gray-700">
                 <p className="mb-2">Role: <span className="font-medium">{role}</span></p>
-                <p className="text-gray-500">API skeleton is wired. Guidance will appear here in M2.</p>
+                {firstPrompt ? (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded text-blue-800 text-sm">
+                    {firstPrompt}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">Start a session to receive the first prompt.</p>
+                )}
               </div>
               <div className="mt-4">
                 <button
-                  disabled
-                  className="px-4 py-2 bg-gray-200 text-gray-500 rounded cursor-not-allowed"
+                  onClick={async () => {
+                    setStarting(true)
+                    const res = await startSession(role)
+                    if (res) { setSessionId(res.sessionId); setFirstPrompt(res.firstPrompt) }
+                    setStarting(false)
+                  }}
+                  disabled={starting}
+                  className={`px-4 py-2 rounded ${starting? 'bg-gray-200 text-gray-500':'bg-blue-600 text-white hover:bg-blue-700'}`}
                 >
-                  Start Session (disabled in M1)
+                  {starting? 'Starting...':'Start Session'}
                 </button>
               </div>
             </div>
