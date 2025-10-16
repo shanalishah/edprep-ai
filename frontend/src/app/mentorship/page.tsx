@@ -51,6 +51,8 @@ interface Connection {
   target_band_score: number
   focus_areas: string[]
   created_at: string
+  mentor_rating?: number
+  mentee_rating?: number
   mentor: {
     id: number
     username: string
@@ -80,6 +82,7 @@ interface Session {
   id: number
   connection_id: number
   title: string
+  description?: string
   scheduled_at: string
   duration_minutes: number
   status: string

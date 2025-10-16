@@ -103,7 +103,9 @@ export default function ChatPage() {
       }
     `
     document.head.appendChild(style)
-    return () => document.head.removeChild(style)
+    return () => {
+      document.head.removeChild(style)
+    }
   }, [])
   
   const [connection, setConnection] = useState<Connection | null>(null)
@@ -237,10 +239,7 @@ export default function ChatPage() {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      const fileType = file.type.startsWith('image/') ? 'image' : 
-                     file.type.startsWith('video/') ? 'video' : 
-                     file.type.startsWith('audio/') ? 'audio' : 'file'
-      sendMessage(fileType, file)
+      sendMessage('file', file)
     }
   }
 
@@ -478,7 +477,6 @@ export default function ChatPage() {
                           style={{
                             borderRadius: '16px !important',
                             padding: '8px 16px !important',
-                            color: '#000000 !important',
                             backgroundColor: isOwn ? '#3b82f6 !important' : '#f3f4f6 !important',
                             border: isOwn ? '2px solid #2563eb !important' : '1px solid #e5e7eb !important',
                             boxShadow: isOwn ? '0 1px 3px rgba(0,0,0,0.1) !important' : 'none !important',
@@ -488,7 +486,7 @@ export default function ChatPage() {
                             width: 'fit-content !important',
                             maxWidth: '80% !important',
                             color: isOwn ? '#ffffff !important' : '#000000 !important',
-                            position: 'relative !important'
+                            position: 'relative'
                           }}>
                           
                           {/* DEBUG INDICATOR */}
@@ -521,8 +519,8 @@ export default function ChatPage() {
                                   margin: '0 !important',
                                   lineHeight: '1.4 !important',
                                   display: 'block !important',
-                                  visibility: 'visible !important',
-                                  opacity: '1 !important'
+                                   visibility: 'visible',
+                                   opacity: 1
                                 }}>{message.content || 'NO CONTENT'}</p>
                             </div>
                           ) : (
