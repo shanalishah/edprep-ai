@@ -69,19 +69,17 @@ _SESSIONS: dict[str, Session] = {}
 def _first_prompt_for_role(role: Role) -> str:
     if role == "questioner":
         return (
-            "Socratic Guidance — Keep answers brief.\n"
-            "1) What is your main position on the topic?\n"
-            "2) Draft ONE thesis sentence (no more than 25 words)."
+            "Welcome! I'll guide you with questions and templates.\n"
+            "What's your main position on this topic? Use this template: 'While [opposing view], I believe [your position] because [reason 1] and [reason 2].' Now write your thesis statement."
         )
     if role == "explainer":
         return (
-            "Explainer — Band 7 intro guidance.\n"
-            "Rule: State a clear position. Template: 'While X, I believe Y because A and B.'\n"
-            "Task: Try drafting your introduction (2–3 sentences)."
+            "Welcome! I'll explain rules with examples and practice.\n"
+            "Rule: A strong introduction states position clearly. Example: 'While some argue technology isolates people, I believe it strengthens connections through improved communication and economic opportunities.' Now write your introduction using this pattern."
         )
     return (
-        "Challenger — Small challenge.\n"
-        "Task: Create an outline with 2 body paragraphs. For each: write a topic sentence + one concrete example."
+        "Welcome! I'll challenge you to improve your writing.\n"
+        "Your first challenge: Create a detailed outline. For each body paragraph, write one topic sentence + one specific example. Make sure each paragraph supports a different reason for your position."
     )
 
 
@@ -136,11 +134,25 @@ async def step_session(session_id: str, payload: StepRequest, current_user: dict
     
     try:
         if ai_feedback_generator and (getattr(ai_feedback_generator, 'openai_client', None) or getattr(ai_feedback_generator, 'anthropic_client', None)):
-            # Build concise, role-specific system prompt
+            # Build enhanced, action-oriented system prompts
             role_style = {
-                "questioner": "You are a Socratic IELTS Writing coach. Ask one focused question at a time to move the essay forward. Keep to <=2 sentences.",
-                "explainer": "You are a concise IELTS Writing coach. Give one clear instruction or tip with a tiny example. Keep to <=2 sentences.",
-                "challenger": "You are a tough but fair IELTS Writing coach. Set one small challenge to strengthen the draft. Keep to <=2 sentences."
+                "questioner": """You are a Socratic IELTS Writing coach who combines questioning with active writing guidance. For each response:
+1. Ask one focused question to develop their thinking
+2. Provide a specific writing template or example
+3. Ask them to apply it immediately
+Keep responses under 3 sentences. Always end with a clear writing task.""",
+                
+                "explainer": """You are an IELTS Writing coach who explains rules with examples and immediate practice. For each response:
+1. Explain one writing rule or technique
+2. Show a concrete example from IELTS materials
+3. Give them a specific writing task to practice it
+Keep responses under 3 sentences. Always include a "Now write..." instruction.""",
+                
+                "challenger": """You are a tough but fair IELTS Writing coach who identifies weaknesses and provides solutions. For each response:
+1. Identify a specific weakness in their writing
+2. Show them exactly how to improve it with an example
+3. Challenge them to rewrite or improve that section
+Keep responses under 3 sentences. Always end with a specific improvement task."""
             }[role]
 
             # Retrieve a short citation when helpful (best-effort)
@@ -161,11 +173,17 @@ async def step_session(session_id: str, payload: StepRequest, current_user: dict
             context = (db_session.latest_draft_content or "").strip()
             context = context[-1500:] if context else ""
 
-            # Compose prompt
+            # Compose enhanced prompt with writing guidance context
             user_prompt = (
                 "Context (latest draft excerpt, may be empty):\n" + (context or "<empty>") +
                 "\n\nLearner input (if any this turn):\n" + (user_input or "<none>") +
-                "\n\nInstruction: Respond as the coach for role '" + role + "'. Give one actionable next step to progress the essay now. Do not write the essay for the learner."
+                "\n\nInstruction: Respond as the " + role + " coach. Your response should:\n" +
+                "- " + ("Ask a question + provide a template + ask them to write" if role == "questioner" else 
+                       "Explain a rule + show example + give writing task" if role == "explainer" else
+                       "Identify weakness + show improvement + challenge rewrite") +
+                "\n- Focus on IELTS Task 2 essay structure and band 7+ techniques" +
+                "\n- Always end with a specific writing task they must complete" +
+                "\n- Do not write the essay for them, but guide them to write it themselves."
             )
 
             # Call OpenAI first, otherwise Anthropic; keep output short
@@ -195,12 +213,12 @@ async def step_session(session_id: str, payload: StepRequest, current_user: dict
     except Exception as e:
         agent_output = None
 
-    # Fallback to deterministic, safe prompts when LLM is not available
+    # Fallback to enhanced deterministic prompts when LLM is not available
     if not agent_output:
         if role == "questioner":
-            agent_output = "Great. Next: Write ONE topic sentence for Body 1 that directly supports your thesis."
+            agent_output = "What's your main argument? Use this template: 'While [opposing view], I believe [position] because [reason 1] and [reason 2].' Now write your thesis statement."
         elif role == "explainer":
-            agent_output = "Tip: A topic sentence states a claim first, then you add evidence. Now write one clear topic sentence for Body 1."
+            agent_output = "Topic sentences need a clear claim first. Example: 'Technology has revolutionized communication.' Now write your Body 1 topic sentence using this pattern."
             try:
                 index_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'retrieval_index.json'))
                 retriever = TfidfRetriever()
@@ -213,7 +231,7 @@ async def step_session(session_id: str, payload: StepRequest, current_user: dict
             except Exception:
                 pass
         else:  # challenger
-            agent_output = "Challenge: Rewrite your introduction to state position in the first sentence and preview two reasons."
+            agent_output = "Your introduction needs more specificity. Rewrite it using this structure: 'In [context], [topic] has [impact]. While [opposing view], I believe [position] because [reasons].'"
 
     # Update draft version if provided
     draft_version = DraftVersion(content=db_session.latest_draft_content or "", version=db_session.latest_draft_version)
