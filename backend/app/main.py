@@ -255,8 +255,9 @@ async def create_test_user(
         if existing_user:
             return {"message": f"User {email} already exists", "status": "exists"}
         
-        # Create new user
-        hashed_password = get_password_hash(password)
+        # Create new user - truncate password if too long for bcrypt
+        password_to_hash = password[:72] if len(password) > 72 else password
+        hashed_password = get_password_hash(password_to_hash)
         new_user = User(
             email=email,
             username=username,
