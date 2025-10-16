@@ -10,13 +10,16 @@ import logging
 import uvicorn
 
 from app.core.config import settings
-from app.core.security import verify_token, create_access_token, verify_password, get_password_hash
+from app.core.security import verify_token, create_access_token, verify_password, get_password_hash, get_current_user
 from app.services.production_multi_agent import ProductionMultiAgentScoringEngine
 from app.services.ai_feedback_generator import AdvancedAIFeedbackGenerator
 from app.database import init_database, get_db, DatabaseManager
 from app.models.user import User
 from app.models.essay_submission import EssaySubmission
 from sqlalchemy.orm import Session
+
+# Import mentorship API
+from app.api import mentorship
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -91,25 +94,7 @@ app.add_middleware(
 )
 
 
-# Dependency to get current user
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Get current authenticated user"""
-    token = credentials.credentials
-    
-    # Handle guest tokens
-    if token.startswith('guest_'):
-        return {"user_id": "guest", "token": token, "isGuest": True}
-    
-    user_id = verify_token(token)
-    
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    return {"user_id": user_id, "token": token, "isGuest": False}
+# get_current_user is now imported from app.core.security
 
 
 # Health check endpoint
@@ -136,6 +121,7 @@ async def register_user(
     target_band_score: float = Form(None),
     current_level: str = Form("beginner"),
     learning_goals: str = Form(None),
+    role: str = Form("student"),
     db: Session = Depends(get_db)
 ):
     """Register a new user"""
@@ -164,7 +150,8 @@ async def register_user(
             "first_language": first_language,
             "target_band_score": target_band_score,
             "current_level": current_level,
-            "learning_goals": learning_goals
+            "learning_goals": learning_goals,
+            "role": role
         }
         
         user = DatabaseManager.create_user(db, user_data)
@@ -709,34 +696,12 @@ async def get_user_achievements(
     }
 
 
-# Social features endpoints
-@app.get("/api/v1/social/mentors")
-async def get_available_mentors(
-    current_user: dict = Depends(get_current_user),
-    subject: str = "writing"
-):
-    """Get available mentors"""
-    
-    # TODO: Implement mentor system
-    return {
-        "mentors": [],
-        "total": 0
-    }
+# Include mentorship API routes
+app.include_router(mentorship.router)
 
-
-@app.post("/api/v1/social/mentors/{mentor_id}/request")
-async def request_mentor(
-    mentor_id: int,
-    current_user: dict = Depends(get_current_user)
-):
-    """Request mentorship"""
-    
-    # TODO: Implement mentor request
-    return {
-        "mentor_id": mentor_id,
-        "request_sent": True,
-        "status": "pending"
-    }
+# Include mentorship sessions API routes
+from app.api import mentorship_sessions
+app.include_router(mentorship_sessions.router, prefix="/api/v1/mentorship", tags=["mentorship-sessions"])
 
 
 # Admin endpoints

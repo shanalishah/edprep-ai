@@ -48,9 +48,11 @@ def create_tables():
     Create all database tables
     """
     # Import all models to ensure they are registered
-    from app.models.user import User, UserProgress, UserSession
+    from app.models.user import User, UserProgress, UserSession, Base
     from app.models.essay_submission import EssaySubmission, UserMistake, StudyPlan, LearningSession
+    from app.models.mentorship import MentorshipConnection, MentorshipMessage, MentorshipSession, UserProfile
     
+    # Create tables using single Base class
     Base.metadata.create_all(bind=engine)
 
 
@@ -102,7 +104,8 @@ class DatabaseManager:
             first_language=user_data.get("first_language"),
             target_band_score=user_data.get("target_band_score"),
             current_level=user_data.get("current_level", "beginner"),
-            learning_goals=user_data.get("learning_goals")
+            learning_goals=user_data.get("learning_goals"),
+            role=user_data.get("role", "student")
         )
         
         db.add(db_user)

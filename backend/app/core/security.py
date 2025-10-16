@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 from typing import Optional, Union, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import secrets
 import string
 
@@ -51,7 +52,15 @@ def verify_token(token: str) -> Optional[str]:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        # Try bcrypt first
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        print(f"Bcrypt verification failed: {e}")
+        # Fallback to SHA256 for admin accounts
+        import hashlib
+        sha256_hash = hashlib.sha256(plain_password.encode()).hexdigest()
+        return sha256_hash == hashed_password
 
 
 def get_password_hash(password: str) -> str:
@@ -142,3 +151,27 @@ def validate_username(username: str) -> tuple[bool, list[str]]:
         errors.append("Username cannot start or end with hyphens or underscores")
     
     return len(errors) == 0, errors
+
+
+# Security dependency
+security = HTTPBearer()
+
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get current authenticated user"""
+    token = credentials.credentials
+    
+    # Handle guest tokens
+    if token.startswith('guest_'):
+        return {"user_id": "guest", "token": token, "isGuest": True}
+    
+    user_id = verify_token(token)
+    
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return {"user_id": user_id, "token": token, "isGuest": False}

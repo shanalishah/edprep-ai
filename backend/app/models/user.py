@@ -33,6 +33,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     is_premium = Column(Boolean, default=False)
+    role = Column(String(50), default="student")  # student, mentor, tutor, admin
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -49,8 +50,8 @@ class User(Base):
     preferred_ai_role = Column(String(50), nullable=True)  # questionnaire, explainer, challenger
     notification_preferences = Column(JSON, nullable=True)
     
-    # Relationships
-    essay_submissions = relationship("EssaySubmission", back_populates="user")
+    # Relationships - commented out to avoid circular import issues
+    # essay_submissions = relationship("EssaySubmission", back_populates="user")
     
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}', username='{self.username}')>"
@@ -69,6 +70,7 @@ class User(Base):
             "is_active": self.is_active,
             "is_verified": self.is_verified,
             "is_premium": self.is_premium,
+            "role": self.role,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "last_login": self.last_login.isoformat() if self.last_login else None,

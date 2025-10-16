@@ -3,13 +3,13 @@ Essay submission and assessment tracking model
 """
 
 from sqlalchemy import Column, Integer, String, DateTime, Text, Float, JSON, ForeignKey, Boolean
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Optional, Dict, Any
 
-Base = declarative_base()
+# Import Base from user model to ensure consistency
+from app.models.user import Base
 
 
 class EssaySubmission(Base):
@@ -45,8 +45,8 @@ class EssaySubmission(Base):
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
     assessed_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # Relationships
-    user = relationship("User", back_populates="essay_submissions")
+    # Relationships - commented out to avoid circular import issues
+    # user = relationship("User", back_populates="essay_submissions")
     
     def __repr__(self):
         return f"<EssaySubmission(id={self.id}, user_id={self.user_id}, score={self.overall_band_score})>"
