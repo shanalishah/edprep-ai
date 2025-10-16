@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models.teaching import TeachingSession as TeachingSessionModel, TeachingTurn as TeachingTurnModel, DraftVersion as DraftVersionModel
 from app.services.retrieval import TfidfRetriever
 import os
+from app.main import multi_agent_engine
 
 
 router = APIRouter(prefix="/api/v1/learning/sessions", tags=["learning-sessions"])
@@ -212,5 +213,30 @@ async def list_drafts(session_id: str, current_user: dict = Depends(get_current_
     drafts = [DraftVersion(content=d.content, version=d.version) for d in db_session.drafts]
     drafts.sort(key=lambda d: d.version)
     return DraftsResponse(drafts=drafts)
+
+
+class CheckpointResponse(BaseModel):
+    scores: dict
+    overall_band_score: float
+    assessment_method: str
+
+
+@router.post("/{session_id}/checkpoint", response_model=CheckpointResponse)
+async def checkpoint(session_id: str, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_session = db.query(TeachingSessionModel).filter(TeachingSessionModel.id == int(session_id)).first()
+    if not db_session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    draft = (db_session.latest_draft_content or "").strip()
+    if not draft:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No draft content to assess")
+    if not multi_agent_engine:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Scoring engine unavailable")
+    # Use existing scoring engine; prompt optional
+    result = multi_agent_engine.score_essay("", draft, db_session.task_type)
+    return CheckpointResponse(
+        scores=result.get("scores", {}),
+        overall_band_score=result.get("scores", {}).get("overall_band_score", 0.0),
+        assessment_method=result.get("assessment_method", "multi_agent")
+    )
 
 

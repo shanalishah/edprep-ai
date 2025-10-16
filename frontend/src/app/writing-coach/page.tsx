@@ -32,6 +32,8 @@ export default function WritingCoachPage() {
   const [stepping, setStepping] = useState(false)
   const [sessions, setSessions] = useState<{id:string, role:Role, latest_draft:{content:string, version:number}}[]>([])
   const [drafts, setDrafts] = useState<{content:string, version:number}[]>([])
+  const [scores, setScores] = useState<{overall_band_score?: number, task_achievement?: number, coherence_cohesion?: number, lexical_resource?: number, grammatical_range?: number}>({})
+  const [checking, setChecking] = useState(false)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -131,6 +133,39 @@ export default function WritingCoachPage() {
                 placeholder="Editing will be enabled in M2"
               />
               <div className="mt-3 text-xs text-gray-500">Checkpoints and scoring will be enabled in M2.</div>
+
+              {/* Rubric Panel */}
+              <div className="mt-4 border rounded p-3 bg-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-sm font-semibold text-gray-800">Rubric</h2>
+                  <button
+                    disabled={!sessionId || checking}
+                    onClick={async()=>{
+                      if(!sessionId) return
+                      setChecking(true)
+                      try{
+                        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+                        if (!token) return
+                        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/${sessionId}/checkpoint`,{ method:'POST', headers:{'Authorization':`Bearer ${token}`}})
+                        if(res.ok){
+                          const data = await res.json()
+                          const s = data.scores || {}
+                          setScores({ overall_band_score: s.overall_band_score, task_achievement: s.task_achievement, coherence_cohesion: s.coherence_cohesion, lexical_resource: s.lexical_resource, grammatical_range: s.grammatical_range })
+                        }
+                      } finally { setChecking(false) }
+                    }}
+                    className={`text-xs px-2 py-1 rounded ${!sessionId||checking? 'bg-gray-200 text-gray-500':'bg-purple-600 text-white hover:bg-purple-700'}`}
+                  >{checking? 'Checking...':'Checkpoint'}</button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                  <div>Overall: <span className="font-medium">{scores.overall_band_score ?? '-'}</span></div>
+                  <div>Task Achievement: <span className="font-medium">{scores.task_achievement ?? '-'}</span></div>
+                  <div>Coherence & Cohesion: <span className="font-medium">{scores.coherence_cohesion ?? '-'}</span></div>
+                  <div>Lexical Resource: <span className="font-medium">{scores.lexical_resource ?? '-'}</span></div>
+                  <div>Grammatical Range: <span className="font-medium">{scores.grammatical_range ?? '-'}</span></div>
+                </div>
+                <div className="mt-2 text-[10px] text-gray-500">Target (demo): 7.0 across criteria</div>
+              </div>
 
               {/* History */}
               <div className="mt-6">
