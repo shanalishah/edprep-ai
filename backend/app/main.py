@@ -849,6 +849,10 @@ app.include_router(mentorship.router)
 from app.api import mentorship_sessions
 app.include_router(mentorship_sessions.router, prefix="/api/v1/mentorship", tags=["mentorship-sessions"])
 
+# Include learning sessions API routes (Writing Coach M1 skeleton)
+from app.api import learning_sessions
+app.include_router(learning_sessions.router)
+
 
 # Admin endpoints
 @app.get("/api/v1/admin/stats")
