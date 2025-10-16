@@ -231,6 +231,55 @@ async def logout_user(current_user: dict = Depends(get_current_user)):
     return {"message": "User logged out successfully"}
 
 
+@app.post("/api/v1/admin/create-test-user")
+async def create_test_user(
+    email: str = Form(...),
+    username: str = Form(...),
+    password: str = Form(...),
+    full_name: str = Form(...),
+    role: str = Form("student")
+):
+    """Temporary endpoint to create test admin accounts"""
+    try:
+        from app.database import get_db
+        from app.models.user import User
+        from app.core.security import get_password_hash
+        
+        db = next(get_db())
+        
+        # Check if user already exists
+        existing_user = db.query(User).filter(
+            (User.email == email) | (User.username == username)
+        ).first()
+        
+        if existing_user:
+            return {"message": f"User {email} already exists", "status": "exists"}
+        
+        # Create new user
+        hashed_password = get_password_hash(password)
+        new_user = User(
+            email=email,
+            username=username,
+            hashed_password=hashed_password,
+            full_name=full_name,
+            role=role,
+            is_verified=True
+        )
+        
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        return {
+            "message": f"Test user {email} created successfully",
+            "user_id": new_user.id,
+            "role": new_user.role
+        }
+        
+    except Exception as e:
+        return {"error": f"Failed to create test user: {str(e)}"}
+
+
 # User dashboard and progress endpoints
 @app.get("/api/v1/user/profile")
 async def get_user_profile(
