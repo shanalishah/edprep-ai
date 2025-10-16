@@ -25,17 +25,21 @@ import {
 import Link from 'next/link'
 
 export default function HomePage() {
-  const { isAuthenticated, loading } = useAuth()
+  // Temporarily bypass auth to fix hydration issue
+  const isAuthenticated = false
+  const loading = false
   const router = useRouter()
   const [currentSlide, setCurrentSlide] = useState(0)
 
   useEffect(() => {
-    if (!loading) {
-      if (isAuthenticated) {
+    // Check auth on client side only
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('access_token')
+      if (token) {
         router.push('/dashboard/home')
       }
     }
-  }, [isAuthenticated, loading, router])
+  }, [router])
 
   // Auto-rotate hero slides
   useEffect(() => {
