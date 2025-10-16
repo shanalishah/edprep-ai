@@ -282,6 +282,33 @@ async def create_test_user(
         return {"error": f"Failed to create test user: {str(e)}"}
 
 
+@app.get("/api/v1/admin/test-users")
+async def get_test_users():
+    """Get all test users for debugging"""
+    try:
+        from app.database import get_db
+        from app.models.user import User
+        
+        db = next(get_db())
+        users = db.query(User).filter(User.email.like('admin%@edprep.ai')).all()
+        
+        user_list = []
+        for user in users:
+            user_list.append({
+                "id": user.id,
+                "email": user.email,
+                "username": user.username,
+                "role": user.role,
+                "is_verified": user.is_verified,
+                "created_at": user.created_at.isoformat() if user.created_at else None
+            })
+        
+        return {"users": user_list, "count": len(user_list)}
+        
+    except Exception as e:
+        return {"error": f"Failed to get test users: {str(e)}"}
+
+
 # User dashboard and progress endpoints
 @app.get("/api/v1/user/profile")
 async def get_user_profile(
