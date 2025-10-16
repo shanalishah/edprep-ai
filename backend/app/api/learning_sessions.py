@@ -6,6 +6,7 @@ from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.teaching import TeachingSession as TeachingSessionModel, TeachingTurn as TeachingTurnModel, DraftVersion as DraftVersionModel
+from app.services.retrieval import TfidfRetriever
 
 
 router = APIRouter(prefix="/api/v1/learning/sessions", tags=["learning-sessions"])
@@ -130,9 +131,19 @@ async def step_session(session_id: str, payload: StepRequest, current_user: dict
             "Great. Next: Write ONE topic sentence for Body 1 that directly supports your thesis."
         )
     elif role == "explainer":
-        agent_output = (
-            "Tip: A topic sentence states a claim first, then you add evidence. Now write one clear topic sentence for Body 1."
-        )
+        # Try retrieval to add a citation
+        agent_output = "Tip: A topic sentence states a claim first, then you add evidence. Now write one clear topic sentence for Body 1."
+        try:
+            index_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'retrieval_index.json'))
+            retriever = TfidfRetriever()
+            if os.path.exists(index_path):
+                retriever.load(index_path)
+                hits = retriever.search("IELTS Task 2 topic sentence guidance", k=1)
+                if hits:
+                    h = hits[0]
+                    agent_output += f"\nSource: {os.path.basename(h.source)} p.{h.page}"
+        except Exception:
+            pass
     else:  # challenger
         agent_output = (
             "Challenge: Rewrite your introduction to state position in the first sentence and preview two reasons."
