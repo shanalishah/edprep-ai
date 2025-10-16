@@ -166,13 +166,16 @@ export default function LoginPage() {
                 Development Testing
               </h3>
               <p className="text-yellow-700 text-sm mb-4">Use these test admin accounts for development:</p>
-              <div className="bg-green-100 border border-green-300 rounded-lg p-3 mb-4">
-                <p className="text-green-800 text-sm">
-                  <strong>✅ Railway accounts created!</strong> Use these credentials for live testing:
+              <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 mb-4">
+                <p className="text-blue-800 text-sm">
+                  <strong>🚀 Live Testing Available!</strong>
                 </p>
-                <div className="mt-2 text-sm">
-                  <p><strong>Live Site:</strong> admin1@edprep.ai / test</p>
-                  <p><strong>Local:</strong> admin1@edprep.ai / admin123</p>
+                <div className="mt-2 text-sm space-y-1">
+                  <p><strong>For Live Site (Vercel):</strong></p>
+                  <p className="font-mono bg-blue-50 p-2 rounded">admin1@edprep.ai / test</p>
+                  <p className="text-xs text-blue-600 mt-2">
+                    ⚠️ If login fails, use localhost:3000 with admin123 password
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3 text-sm">
