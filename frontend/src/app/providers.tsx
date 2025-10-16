@@ -31,8 +31,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAuthenticated(true);
         setUser(JSON.parse(userData));
       }
+      // Add a small delay to ensure proper hydration
+      setTimeout(() => {
+        setLoading(false);
+      }, 100);
+    } else {
+      // On server side, set loading to false immediately
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = (token: string, userData: any) => {
