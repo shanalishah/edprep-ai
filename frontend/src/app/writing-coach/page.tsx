@@ -30,6 +30,8 @@ export default function WritingCoachPage() {
   const [draftDelta, setDraftDelta] = useState("")
   const [lastAgentOutput, setLastAgentOutput] = useState("")
   const [stepping, setStepping] = useState(false)
+  const [sessions, setSessions] = useState<{id:string, role:Role, latest_draft:{content:string, version:number}}[]>([])
+  const [drafts, setDrafts] = useState<{content:string, version:number}[]>([])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -129,6 +131,55 @@ export default function WritingCoachPage() {
                 placeholder="Editing will be enabled in M2"
               />
               <div className="mt-3 text-xs text-gray-500">Checkpoints and scoring will be enabled in M2.</div>
+
+              {/* History */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-sm font-semibold text-gray-800">Your Sessions</h2>
+                  <button
+                    className="text-xs text-blue-600 hover:underline"
+                    onClick={async()=>{
+                      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+                      if (!token) return
+                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/`,{ headers:{'Authorization':`Bearer ${token}`}})
+                      if(res.ok){ const data = await res.json(); setSessions(data.sessions || []) }
+                    }}
+                  >Refresh</button>
+                </div>
+                <div className="space-y-2">
+                  {sessions.map(s=> (
+                    <div key={s.id} className="border rounded p-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <div>#{s.id} • {s.role}</div>
+                        <button
+                          className="text-xs text-emerald-700 hover:underline"
+                          onClick={async()=>{
+                            const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+                            if (!token) return
+                            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/${s.id}/drafts`,{ headers:{'Authorization':`Bearer ${token}`}})
+                            if(res.ok){ const data = await res.json(); setDrafts(data.drafts || []) }
+                          }}
+                        >View drafts</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {drafts.length>0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-1">Draft Versions</h3>
+                    <div className="space-y-2 max-h-48 overflow-auto border rounded p-2 bg-gray-50">
+                      {drafts.map(d => (
+                        <div key={d.version} className="text-xs">
+                          <div className="font-medium">v{d.version}</div>
+                          <pre className="whitespace-pre-wrap">{d.content}</pre>
+                          <hr className="my-2" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

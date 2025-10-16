@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.teaching import TeachingSession as TeachingSessionModel, TeachingTurn as TeachingTurnModel, DraftVersion as DraftVersionModel
 from app.services.retrieval import TfidfRetriever
+import os
 
 
 router = APIRouter(prefix="/api/v1/learning/sessions", tags=["learning-sessions"])
@@ -180,5 +181,36 @@ async def get_session(session_id: str, current_user: dict = Depends(get_current_
         latest_draft=DraftVersion(content=db_session.latest_draft_content or "", version=db_session.latest_draft_version or 0)
     )
     return api_session
+
+
+class ListSessionsResponse(BaseModel):
+    sessions: List[Session]
+
+
+@router.get("/", response_model=ListSessionsResponse)
+async def list_sessions(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    rows = db.query(TeachingSessionModel).filter(TeachingSessionModel.user_id == int(current_user["user_id"]))\
+        .order_by(TeachingSessionModel.created_at.desc()).all()
+    sessions: List[Session] = []
+    for r in rows:
+        sessions.append(Session(
+            id=str(r.id), role=r.role, task_type=r.task_type, goal=r.goal, status=r.status,
+            turns=[], latest_draft=DraftVersion(content=r.latest_draft_content or "", version=r.latest_draft_version or 0)
+        ))
+    return ListSessionsResponse(sessions=sessions)
+
+
+class DraftsResponse(BaseModel):
+    drafts: List[DraftVersion]
+
+
+@router.get("/{session_id}/drafts", response_model=DraftsResponse)
+async def list_drafts(session_id: str, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_session = db.query(TeachingSessionModel).filter(TeachingSessionModel.id == int(session_id)).first()
+    if not db_session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    drafts = [DraftVersion(content=d.content, version=d.version) for d in db_session.drafts]
+    drafts.sort(key=lambda d: d.version)
+    return DraftsResponse(drafts=drafts)
 
 
