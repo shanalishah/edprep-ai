@@ -15,7 +15,7 @@ async function startSession(role: Role): Promise<{ sessionId: string, firstPromp
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
     if (!token) return null
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/start`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/learning/sessions/start`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ role, task_type: 'Task 2' })
@@ -32,7 +32,7 @@ async function stepSession(sessionId: string, userInput?: string, draftDelta?: s
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
     if (!token) return null
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/${sessionId}/step`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/learning/sessions/${sessionId}/step`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_input: userInput || undefined, draft_delta: draftDelta || undefined })
@@ -441,7 +441,7 @@ export default function WritingCoachPage() {
                       try{
                         const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
                         if (!token) return
-                        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/${sessionId}/checkpoint`,{ method:'POST', headers:{'Authorization':`Bearer ${token}`}})
+                        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/learning/sessions/${sessionId}/checkpoint`,{ method:'POST', headers:{'Authorization':`Bearer ${token}`}})
                         if(res.ok){
                           const data = await res.json()
                           const s = data.scores || {}
@@ -490,7 +490,7 @@ export default function WritingCoachPage() {
                     onClick={async()=>{
                       const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
                       if (!token) return
-                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/`,{ headers:{'Authorization':`Bearer ${token}`}})
+                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/learning/sessions/`,{ headers:{'Authorization':`Bearer ${token}`}})
                       if(res.ok){ const data = await res.json(); setSessions(data.sessions || []) }
                     }}
                   >Refresh</button>
@@ -507,7 +507,7 @@ export default function WritingCoachPage() {
                           onClick={async()=>{
                             const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
                             if (!token) return
-                            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/learning/sessions/${s.id}/drafts`,{ headers:{'Authorization':`Bearer ${token}`}})
+                            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/learning/sessions/${s.id}/drafts`,{ headers:{'Authorization':`Bearer ${token}`}})
                             if(res.ok){ const data = await res.json(); setDrafts(data.drafts || []) }
                           }}
                         >View drafts</button>

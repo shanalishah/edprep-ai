@@ -254,7 +254,7 @@ export default function MentorshipPage() {
         queryParams.append('timezone', searchFilters.timezone)
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/mentors?${queryParams.toString()}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/mentors?${queryParams.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
@@ -276,7 +276,7 @@ export default function MentorshipPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/connections`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
@@ -301,7 +301,7 @@ export default function MentorshipPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/connect`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -344,7 +344,7 @@ export default function MentorshipPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/connections/${connectionId}/accept`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}/accept`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -372,7 +372,7 @@ export default function MentorshipPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/connections/${connectionId}/reject`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}/reject`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -404,7 +404,7 @@ export default function MentorshipPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/connections/${connectionId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -438,7 +438,7 @@ export default function MentorshipPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/sessions/upcoming`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/sessions/upcoming`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
@@ -463,7 +463,7 @@ export default function MentorshipPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/connections/${connectionId}/sessions`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}/sessions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -511,7 +511,7 @@ export default function MentorshipPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/sessions/${sessionId}/complete`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/sessions/${sessionId}/complete`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -548,7 +548,7 @@ export default function MentorshipPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/connections/${connectionId}/rate`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}/rate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -586,7 +586,7 @@ export default function MentorshipPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/mentorship/connections/${connectionId}/messages`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}/messages`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
