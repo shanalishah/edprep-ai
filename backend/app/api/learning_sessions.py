@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.teaching import TeachingSession as TeachingSessionModel, TeachingTurn as TeachingTurnModel, DraftVersion as DraftVersionModel, Checkpoint as CheckpointModel
 from app.services.retrieval import TfidfRetriever
+from app.services.enhanced_retrieval import enhanced_retriever
 import os
 from app.main import multi_agent_engine
 
@@ -155,19 +156,28 @@ Keep responses under 3 sentences. Always include a "Now write..." instruction.""
 Keep responses under 3 sentences. Always end with a specific improvement task."""
             }[role]
 
-            # Retrieve a short citation when helpful (best-effort)
-            citation = ""
+            # Retrieve relevant examples and guidance from enhanced knowledge base
+            enhanced_guidance = ""
             try:
-                index_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'retrieval_index.json'))
-                if os.path.exists(index_path):
-                    retriever = TfidfRetriever()
-                    retriever.load(index_path)
-                    hits = retriever.search("IELTS Task 2 writing guidance topic sentence structure coherence cohesion band 7", k=1)
-                    if hits:
-                        h = hits[0]
-                        citation = f"\nSource: {os.path.basename(h.source)} p.{h.page}"
-            except Exception:
-                citation = ""
+                # Get contextual guidance based on current draft and user input
+                guidance = enhanced_retriever.generate_contextual_guidance(
+                    query=user_input or "IELTS writing guidance",
+                    current_draft=context,
+                    task_type="task2"
+                )
+                
+                # Add relevant examples if available
+                if guidance["relevant_examples"]:
+                    example = guidance["relevant_examples"][0]
+                    enhanced_guidance = f"\n\nExample: {example['content'][:200]}... (Band {example['band_score']})"
+                
+                # Add templates if available
+                if guidance["templates"]:
+                    template = guidance["templates"][0]
+                    enhanced_guidance += f"\n\nTemplate: {template}"
+                
+            except Exception as e:
+                enhanced_guidance = ""
 
             # Provide minimal context (last draft snapshot + latest user input)
             context = (db_session.latest_draft_content or "").strip()
@@ -208,30 +218,39 @@ Keep responses under 3 sentences. Always end with a specific improvement task.""
                 agent_output = (response.content[0].text or "").strip()
 
             if agent_output:
-                # Append citation if available
-                agent_output = agent_output[:600] + citation
+                # Append enhanced guidance if available
+                agent_output = agent_output[:600] + enhanced_guidance
     except Exception as e:
         agent_output = None
 
     # Fallback to enhanced deterministic prompts when LLM is not available
     if not agent_output:
+        # Get enhanced guidance for fallback prompts
+        fallback_guidance = ""
+        try:
+            guidance = enhanced_retriever.generate_contextual_guidance(
+                query=user_input or "IELTS writing guidance",
+                current_draft=context,
+                task_type="task2"
+            )
+            
+            if guidance["relevant_examples"]:
+                example = guidance["relevant_examples"][0]
+                fallback_guidance = f"\n\nExample: {example['content'][:150]}... (Band {example['band_score']})"
+            
+            if guidance["templates"]:
+                template = guidance["templates"][0]
+                fallback_guidance += f"\n\nTemplate: {template}"
+                
+        except Exception:
+            pass
+        
         if role == "questioner":
-            agent_output = "What's your main argument? Use this template: 'While [opposing view], I believe [position] because [reason 1] and [reason 2].' Now write your thesis statement."
+            agent_output = "What's your main argument? Use this template: 'While [opposing view], I believe [position] because [reason 1] and [reason 2].' Now write your thesis statement." + fallback_guidance
         elif role == "explainer":
-            agent_output = "Topic sentences need a clear claim first. Example: 'Technology has revolutionized communication.' Now write your Body 1 topic sentence using this pattern."
-            try:
-                index_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'retrieval_index.json'))
-                retriever = TfidfRetriever()
-                if os.path.exists(index_path):
-                    retriever.load(index_path)
-                    hits = retriever.search("IELTS Task 2 topic sentence guidance", k=1)
-                    if hits:
-                        h = hits[0]
-                        agent_output += f"\nSource: {os.path.basename(h.source)} p.{h.page}"
-            except Exception:
-                pass
+            agent_output = "Topic sentences need a clear claim first. Example: 'Technology has revolutionized communication.' Now write your Body 1 topic sentence using this pattern." + fallback_guidance
         else:  # challenger
-            agent_output = "Your introduction needs more specificity. Rewrite it using this structure: 'In [context], [topic] has [impact]. While [opposing view], I believe [position] because [reasons].'"
+            agent_output = "Your introduction needs more specificity. Rewrite it using this structure: 'In [context], [topic] has [impact]. While [opposing view], I believe [position] because [reasons].'" + fallback_guidance
 
     # Update draft version if provided
     draft_version = DraftVersion(content=db_session.latest_draft_content or "", version=db_session.latest_draft_version)
