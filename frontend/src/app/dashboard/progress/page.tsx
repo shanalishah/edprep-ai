@@ -299,7 +299,7 @@ export default function ProgressPage() {
         >
           <div className="flex items-start">
             <div className="p-3 bg-primary-100 rounded-lg">
-              <TrendingUpIcon className="h-6 w-6 text-primary-600" />
+              <ArrowTrendingUpIcon className="h-6 w-6 text-primary-600" />
             </div>
             <div className="ml-4">
               <h3 className="text-lg font-semibold text-primary-900">💡 Improvement Tips</h3>
