@@ -154,54 +154,6 @@ export default function LoginPage() {
             </p>
           </motion.div>
 
-          {/* Test Admin Credentials - Development Only */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 shadow-lg border border-yellow-200"
-          >
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-yellow-800 mb-3 flex items-center justify-center">
-                <SparklesIcon className="h-5 w-5 mr-2" />
-                Development Testing
-              </h3>
-              <p className="text-yellow-700 text-sm mb-4">Use these test admin accounts for development:</p>
-              <div className="bg-orange-100 border border-orange-300 rounded-lg p-3 mb-4">
-                <p className="text-orange-800 text-sm">
-                  <strong>⚠️ Railway Database Issue</strong>
-                </p>
-                <div className="mt-2 text-sm space-y-1">
-                  <p className="text-orange-700">
-                    Railway backend is running but admin accounts aren't persisting in the database.
-                  </p>
-                  <p className="text-orange-700">
-                    <strong>Solution:</strong> Use localhost:3000 for full testing
-                  </p>
-             <p className="font-mono bg-orange-50 p-2 rounded text-orange-800">
-               localhost:3000 → admin1@edprep.ai / test
-             </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-3 text-sm">
-                <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
-                  <div className="font-semibold text-yellow-800">Admin 1</div>
-                  <div className="text-yellow-700">admin1@edprep.ai / test</div>
-                  <div className="text-xs text-orange-600 mt-1">⚠️ Railway: Database issue</div>
-                </div>
-                <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
-                  <div className="font-semibold text-yellow-800">Admin 2</div>
-                  <div className="text-yellow-700">admin2@edprep.ai / test</div>
-                  <div className="text-xs text-orange-600 mt-1">⚠️ Railway: Database issue</div>
-                </div>
-                <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
-                  <div className="font-semibold text-yellow-800">Admin 3</div>
-                  <div className="text-yellow-700">admin3@edprep.ai / test</div>
-                  <div className="text-xs text-orange-600 mt-1">⚠️ Railway: Database issue</div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
 
           {/* Login Form */}
           <motion.div
