@@ -243,7 +243,6 @@ async def create_test_user(
     try:
         from app.database import get_db
         from app.models.user import User
-        import hashlib
         
         db = next(get_db())
         
@@ -255,14 +254,13 @@ async def create_test_user(
         if existing_user:
             return {"message": f"User {email} already exists", "status": "exists"}
         
-        # Create new user - use SHA256 for Railway compatibility
+        # Create new user - use plain text password for Railway testing
         simple_password = "test"
-        hashed_password = hashlib.sha256(simple_password.encode()).hexdigest()
         
         new_user = User(
             email=email,
             username=username,
-            hashed_password=hashed_password,
+            hashed_password=simple_password,  # Store as plain text for testing
             full_name=full_name,
             role=role,
             is_verified=True

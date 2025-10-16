@@ -60,7 +60,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         # Fallback to SHA256 for admin accounts
         import hashlib
         sha256_hash = hashlib.sha256(plain_password.encode()).hexdigest()
-        return sha256_hash == hashed_password
+        if sha256_hash == hashed_password:
+            return True
+        # Fallback to plain text for Railway testing
+        return plain_password == hashed_password
 
 
 def get_password_hash(password: str) -> str:
