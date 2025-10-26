@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../../providers'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 interface Message {
   id: number
@@ -56,9 +56,9 @@ interface Connection {
 export default function ChatPage() {
   const { isAuthenticated, user, loading: authLoading } = useAuth()
   const router = useRouter()
-  const params = useParams()
-  const connectionId = params?.connectionId as string
   
+  // Get connection ID from URL params
+  const [connectionId, setConnectionId] = useState<string | null>(null)
   const [connection, setConnection] = useState<Connection | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
@@ -67,6 +67,16 @@ export default function ChatPage() {
   const [error, setError] = useState<string | null>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Get connection ID from URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const pathParts = window.location.pathname.split('/')
+      const id = pathParts[pathParts.length - 1]
+      console.log('Extracted connection ID from URL:', id)
+      setConnectionId(id)
+    }
+  }, [])
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -84,7 +94,7 @@ export default function ChatPage() {
   }, [isAuthenticated, authLoading, router])
 
   useEffect(() => {
-    if (isAuthenticated && connectionId && connectionId !== 'undefined') {
+    if (isAuthenticated && connectionId && connectionId !== 'undefined' && connectionId !== 'null') {
       setLoading(true)
       fetchConnection()
       fetchMessages()
@@ -224,13 +234,14 @@ export default function ChatPage() {
     )
   }
 
-  if (!connectionId || connectionId === 'undefined') {
+  if (!connectionId || connectionId === 'undefined' || connectionId === 'null') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h3 className="text-lg font-semibold text-red-800 mb-2">Invalid Connection</h3>
           <p className="text-red-600 mb-4">No connection ID provided or invalid connection ID.</p>
+          <p className="text-sm text-gray-500 mb-4">URL: {typeof window !== 'undefined' ? window.location.pathname : 'N/A'}</p>
           <button
             onClick={() => router.push('/mentorship')}
             className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
