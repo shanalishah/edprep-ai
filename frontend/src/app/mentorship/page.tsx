@@ -93,10 +93,10 @@ export default function MentorshipPage() {
   const router = useRouter()
   
   // State management
-  const [activeTab, setActiveTab] = useState<'find' | 'connections' | 'sessions'>('find')
+  const [activeTab, setActiveTab] = useState<'find' | 'connections' | 'sessions' | 'profile'>('find')
   
   // Modal state cleanup when switching tabs
-  const handleTabChange = (tab: 'find' | 'connections' | 'sessions') => {
+  const handleTabChange = (tab: 'find' | 'connections' | 'sessions' | 'profile') => {
     // Close tab-specific modals when switching tabs (keep global modals open)
     setShowRatingModal(false)
     setShowWorkShareModal(false)
@@ -123,6 +123,19 @@ export default function MentorshipPage() {
   const [requestGoals, setRequestGoals] = useState('')
   const [requestTargetBandScore, setRequestTargetBandScore] = useState('')
   const [requestFocusAreas, setRequestFocusAreas] = useState('')
+  
+  // Mentor profile form
+  const [profileForm, setProfileForm] = useState({
+    bio: '',
+    teaching_experience: '',
+    specializations: '',
+    certifications: '',
+    timezone: '',
+    available_days: '',
+    available_hours: '',
+    is_available_for_mentorship: false,
+    max_mentees: 3
+  })
   
   // Messages
   const [selectedConnection, setSelectedConnection] = useState<Connection | null>(null)
@@ -187,7 +200,7 @@ export default function MentorshipPage() {
     if (isAuthenticated && user) {
       // Set default tab based on user role
       if (user.role === 'mentor' || user.role === 'tutor') {
-        setActiveTab('connections')
+        setActiveTab('profile') // Start with profile setup for mentors
       } else {
         setActiveTab('find')
       }
@@ -333,6 +346,43 @@ export default function MentorshipPage() {
       showMessage('An error occurred while sending the connection request.', 'error')
     } finally {
       setActionLoadingState(actionKey, false)
+    }
+  }
+
+  const handleSaveProfile = async () => {
+    try {
+      const token = localStorage.getItem('access_token')
+      if (!token) return
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Bearer ${token}`
+        },
+        body: new URLSearchParams({
+          bio: profileForm.bio,
+          teaching_experience: profileForm.teaching_experience,
+          specializations: JSON.stringify(profileForm.specializations.split(',').map(s => s.trim())),
+          certifications: JSON.stringify(profileForm.certifications.split(',').map(s => s.trim())),
+          timezone: profileForm.timezone,
+          available_days: JSON.stringify(profileForm.available_days.split(',').map(s => s.trim())),
+          available_hours: JSON.stringify(profileForm.available_hours.split(',').map(s => s.trim())),
+          is_available_for_mentorship: profileForm.is_available_for_mentorship.toString(),
+          max_mentees: profileForm.max_mentees.toString()
+        })
+      })
+
+      if (response.ok) {
+        showMessage('Profile updated successfully!', 'success')
+        fetchConnections() // Refresh data
+      } else {
+        const errorData = await response.json()
+        showMessage(`Failed to update profile: ${errorData.detail}`, 'error')
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      showMessage('An error occurred while updating your profile.', 'error')
     }
   }
 
@@ -866,8 +916,9 @@ export default function MentorshipPage() {
           <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-white/20 p-1">
             <nav className="flex space-x-1">
               {[
-                // Only show "Find Mentors" for students
+                // Show "Find Mentors" for students, "My Profile" for mentors
                 ...(user?.role === 'student' ? [{ id: 'find', name: 'Find Mentors', icon: MagnifyingGlassIcon }] : []),
+                ...(isMentorOrTutor ? [{ id: 'profile', name: 'My Profile', icon: AcademicCapIcon }] : []),
                 { id: 'connections', name: isMentorOrTutor ? 'My Mentees' : 'My Connections', icon: UserGroupIcon },
                 { id: 'sessions', name: 'Sessions', icon: CalendarDaysIcon }
               ].map((tab) => (
@@ -1035,6 +1086,145 @@ export default function MentorshipPage() {
         )}
 
         {/* Connections Tab */}
+        {activeTab === 'profile' && (
+          <div>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Mentor Profile Setup</h2>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${profileForm.is_available_for_mentorship ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                  <span className="text-sm text-gray-600">
+                    {profileForm.is_available_for_mentorship ? 'Available for Mentorship' : 'Not Available'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Bio */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                  <textarea
+                    value={profileForm.bio}
+                    onChange={(e) => setProfileForm({...profileForm, bio: e.target.value})}
+                    placeholder="Tell students about yourself, your teaching experience, and what makes you a great mentor..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={4}
+                  />
+                </div>
+
+                {/* Teaching Experience */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Teaching Experience</label>
+                  <textarea
+                    value={profileForm.teaching_experience}
+                    onChange={(e) => setProfileForm({...profileForm, teaching_experience: e.target.value})}
+                    placeholder="Describe your teaching background, IELTS experience, and qualifications..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={3}
+                  />
+                </div>
+
+                {/* Specializations */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Specializations</label>
+                  <input
+                    type="text"
+                    value={profileForm.specializations}
+                    onChange={(e) => setProfileForm({...profileForm, specializations: e.target.value})}
+                    placeholder="Writing, Speaking, Listening, Reading (comma-separated)"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Certifications */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Certifications</label>
+                  <input
+                    type="text"
+                    value={profileForm.certifications}
+                    onChange={(e) => setProfileForm({...profileForm, certifications: e.target.value})}
+                    placeholder="IELTS Teacher Training, TESOL, etc. (comma-separated)"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Availability Settings */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Available Days</label>
+                    <input
+                      type="text"
+                      value={profileForm.available_days}
+                      onChange={(e) => setProfileForm({...profileForm, available_days: e.target.value})}
+                      placeholder="Monday, Tuesday, Wednesday (comma-separated)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Available Hours</label>
+                    <input
+                      type="text"
+                      value={profileForm.available_hours}
+                      onChange={(e) => setProfileForm({...profileForm, available_hours: e.target.value})}
+                      placeholder="Morning, Afternoon, Evening (comma-separated)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Settings */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Max Mentees</label>
+                    <input
+                      type="number"
+                      value={profileForm.max_mentees}
+                      onChange={(e) => setProfileForm({...profileForm, max_mentees: parseInt(e.target.value)})}
+                      min="1"
+                      max="10"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                    <input
+                      type="text"
+                      value={profileForm.timezone}
+                      onChange={(e) => setProfileForm({...profileForm, timezone: e.target.value})}
+                      placeholder="UTC+5:30, EST, PST, etc."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Availability Toggle */}
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="available"
+                    checked={profileForm.is_available_for_mentorship}
+                    onChange={(e) => setProfileForm({...profileForm, is_available_for_mentorship: e.target.checked})}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="available" className="text-sm font-medium text-gray-700">
+                    Available for Mentorship
+                  </label>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSaveProfile}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Save Profile
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'connections' && (
           <div>
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20">

@@ -43,14 +43,18 @@ class MentorshipService:
     @staticmethod
     def get_available_mentors(db: Session, mentee_id: int, filters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """Get list of available mentors with matching criteria"""
-        query = db.query(User, UserProfile).join(
+        # Use LEFT JOIN to include mentors without profiles
+        query = db.query(User, UserProfile).outerjoin(
             UserProfile, User.id == UserProfile.user_id
         ).filter(
             and_(
                 User.role.in_(["mentor", "tutor"]),
-                UserProfile.is_available_for_mentorship == True,
-                UserProfile.mentorship_status == "available",
-                User.id != mentee_id
+                User.id != mentee_id,
+                # Show mentors if they have no profile OR if their profile allows mentorship
+                or_(
+                    UserProfile.is_available_for_mentorship == True,
+                    UserProfile.is_available_for_mentorship.is_(None)
+                )
             )
         )
         
@@ -91,8 +95,15 @@ class MentorshipService:
                 "role": user.role,
                 "target_band_score": user.target_band_score,
                 "current_level": user.current_level,
-                "profile": profile.to_dict() if profile else None,
-                "is_available": profile.is_available_for_mentorship if profile else False
+                "profile": profile.to_dict() if profile else {
+                    "bio": "No profile set up yet",
+                    "teaching_experience": "Profile not completed",
+                    "specializations": [],
+                    "average_rating": 0.0,
+                    "total_mentees_helped": 0,
+                    "is_available_for_mentorship": True
+                },
+                "is_available": profile.is_available_for_mentorship if profile else True
             }
             result.append(mentor_data)
         
