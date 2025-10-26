@@ -275,8 +275,10 @@ export default function MentorshipPage() {
         const data = await response.json()
         setMentors(data.mentors || [])
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to fetch mentors: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to fetch mentors: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error fetching mentors:', error)
@@ -297,8 +299,10 @@ export default function MentorshipPage() {
         const data = await response.json()
         setConnections(data.connections || [])
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to fetch connections: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to fetch connections: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error fetching connections:', error)
@@ -338,8 +342,10 @@ export default function MentorshipPage() {
         setRequestTargetBandScore('')
         setRequestFocusAreas('')
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to send request: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to send request: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error sending connection request:', error)
@@ -377,8 +383,10 @@ export default function MentorshipPage() {
         showMessage('Profile updated successfully!', 'success')
         fetchConnections() // Refresh data
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to update profile: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to update profile: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -403,8 +411,10 @@ export default function MentorshipPage() {
         showMessage('Connection request accepted!', 'success')
         fetchConnections()
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to accept request: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to accept request: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error accepting request:', error)
@@ -431,8 +441,10 @@ export default function MentorshipPage() {
         showMessage('Connection request rejected.', 'success')
         fetchConnections()
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to reject request: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to reject request: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error rejecting request:', error)
@@ -496,8 +508,10 @@ export default function MentorshipPage() {
         const data = await response.json()
         setSessions(data.sessions || [])
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to fetch sessions: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to fetch sessions: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error fetching sessions:', error)
@@ -542,8 +556,10 @@ export default function MentorshipPage() {
         })
         fetchSessions()
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to create session: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to create session: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error creating session:', error)
@@ -578,8 +594,10 @@ export default function MentorshipPage() {
         showMessage('Session completed successfully!', 'success')
         fetchSessions()
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to complete session: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to complete session: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error completing session:', error)
@@ -616,8 +634,10 @@ export default function MentorshipPage() {
         setRatingForm({ rating: 5, feedback: '' })
         fetchConnections()
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to submit rating: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to submit rating: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error submitting rating:', error)
@@ -653,8 +673,10 @@ export default function MentorshipPage() {
         setShowWorkShareModal(false)
         setWorkShareForm({ title: '', content: '', work_type: 'essay', description: '' })
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to share work: ${errorData.detail}`, 'error')
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to share work: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error sharing work:', error)
