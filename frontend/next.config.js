@@ -13,12 +13,12 @@ const nextConfig = {
     // Enable modern bundling
     esmExternals: true,
   },
-  // Handle API routes properly - use same domain for Vercel
+  // Handle API routes properly - proxy to Railway backend
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: '/api/:path*', // Use same domain for Vercel backend
+        destination: 'https://web-production-4d7f.up.railway.app/api/:path*',
       },
     ]
   },
