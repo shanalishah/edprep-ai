@@ -50,7 +50,8 @@ export default function LoginPage() {
       formData.append('username', data.email)
       formData.append('password', data.password)
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/login`, {
+      // Use relative path so Next.js rewrites proxy to the backend
+      const response = await fetch(`/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

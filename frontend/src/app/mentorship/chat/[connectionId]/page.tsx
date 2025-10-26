@@ -132,11 +132,10 @@ export default function ChatPage() {
         return
       }
 
-      // Use Railway backend (working and stable)
-      const API_URL = 'https://web-production-4d7f.up.railway.app'
-      console.log(`🔍 Fetching connection ${connectionId} from: ${API_URL}`)
+      // Use relative API path; Next.js rewrites will proxy to backend
+      console.log(`🔍 Fetching connection ${connectionId}`)
       
-      const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}`, {
+      const response = await fetch(`/api/v1/mentorship/connections/${connectionId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
@@ -187,11 +186,10 @@ export default function ChatPage() {
         return
       }
 
-      // Use Railway backend (working and stable)
-      const API_URL = 'https://web-production-4d7f.up.railway.app'
-      console.log(`🔍 Fetching messages for connection ${connectionId} from: ${API_URL}`)
+      // Use relative API path; Next.js rewrites will proxy to backend
+      console.log(`🔍 Fetching messages for connection ${connectionId}`)
       
-      const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
+      const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
@@ -226,14 +224,13 @@ export default function ChatPage() {
         return
       }
 
-      // Use Railway backend (working and stable)
-      const API_URL = 'https://web-production-4d7f.up.railway.app'
+      // Use relative API path; Next.js rewrites will proxy to backend
       const formData = new FormData()
       formData.append('content', newMessage)
       formData.append('message_type', 'text')
 
       console.log(`📤 Sending message to connection ${connectionId}`)
-      const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
+      const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
