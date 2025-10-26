@@ -254,27 +254,22 @@ async def create_test_user(
         if existing_user:
             return {"message": f"User {email} already exists", "status": "exists"}
         
-        # Create new user - use plain text password for Railway testing
-        simple_password = "test"
+        # Create new user - let DatabaseManager handle password hashing
+        user_data = {
+            "email": email,
+            "username": username,
+            "password": password,
+            "full_name": full_name,
+            "role": role
+        }
         
-        new_user = User(
-            email=email,
-            username=username,
-            hashed_password=simple_password,  # Store as plain text for testing
-            full_name=full_name,
-            role=role,
-            is_verified=True
-        )
-        
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
+        new_user = DatabaseManager.create_user(db, user_data)
         
         return {
             "message": f"Test user {email} created successfully",
             "user_id": new_user.id,
             "role": new_user.role,
-            "password": simple_password
+            "password": password
         }
         
     except Exception as e:
