@@ -20,7 +20,7 @@ import {
   AcademicCapIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import { supabase } from '../../lib/supabaseClient'
+import { supabase } from '../../../lib/supabaseClient'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
