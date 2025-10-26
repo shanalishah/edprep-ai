@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Failed to initialize AI Feedback Generator: {e}")
         ai_feedback_generator = None
     
-    logger.info("🎉 IELTS Master Platform started successfully!")
+    logger.info("🎉 IELTS Master Platform started successfully! (v2.1.0)")
     
     yield
     
