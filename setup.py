@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ielts-master-platform",
-    version="2.1.1",
+    version="2.1.2",
     description="AI-powered IELTS writing assessment platform",
     packages=find_packages(),
     install_requires=[
