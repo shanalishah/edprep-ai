@@ -132,8 +132,8 @@ export default function ChatPage() {
         return
       }
 
-      // Use correct Vercel production URL
-      const API_URL = 'https://ielts-master-platform.vercel.app'
+      // Use Railway backend (working and stable)
+      const API_URL = 'https://web-production-4d7f.up.railway.app'
       console.log(`🔍 Fetching connection ${connectionId} from: ${API_URL}`)
       
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}`, {
@@ -187,8 +187,8 @@ export default function ChatPage() {
         return
       }
 
-      // Use correct Vercel production URL
-      const API_URL = 'https://ielts-master-platform.vercel.app'
+      // Use Railway backend (working and stable)
+      const API_URL = 'https://web-production-4d7f.up.railway.app'
       console.log(`🔍 Fetching messages for connection ${connectionId} from: ${API_URL}`)
       
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
@@ -226,8 +226,8 @@ export default function ChatPage() {
         return
       }
 
-      // Use correct Vercel production URL
-      const API_URL = 'https://ielts-master-platform.vercel.app'
+      // Use Railway backend (working and stable)
+      const API_URL = 'https://web-production-4d7f.up.railway.app'
       const formData = new FormData()
       formData.append('content', newMessage)
       formData.append('message_type', 'text')

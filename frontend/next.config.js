@@ -13,12 +13,12 @@ const nextConfig = {
     // Enable modern bundling
     esmExternals: true,
   },
-  // Handle API routes properly - proxy to Vercel backend
+  // Handle API routes properly - proxy to Railway backend
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://ielts-master-platform.vercel.app/api/:path*',
+        destination: 'https://web-production-4d7f.up.railway.app/api/:path*',
       },
     ]
   },
