@@ -111,3 +111,4 @@ backend/models/
 - Use secure storage for production model files
 - Implement proper access controls for model downloads
 - Consider model encryption for sensitive deployments
+
