@@ -52,18 +52,34 @@ def verify_token(token: str) -> Optional[str]:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
+    print(f"DEBUG: Verifying password '{plain_password}' against hash '{hashed_password[:20]}...'")
     try:
         # Try bcrypt first
-        return pwd_context.verify(plain_password, hashed_password)
+        result = pwd_context.verify(plain_password, hashed_password)
+        print(f"DEBUG: Bcrypt verification result: {result}")
+        return result
     except Exception as e:
-        print(f"Bcrypt verification failed: {e}")
+        print(f"DEBUG: Bcrypt verification failed: {e}")
         # Fallback to SHA256 for admin accounts
         import hashlib
         sha256_hash = hashlib.sha256(plain_password.encode()).hexdigest()
         if sha256_hash == hashed_password:
+            print("DEBUG: SHA256 verification successful")
             return True
         # Fallback to plain text for Railway testing
-        return plain_password == hashed_password
+        if plain_password == hashed_password:
+            print("DEBUG: Plain text verification successful")
+            return True
+        # Additional fallback: try bcrypt with truncated password
+        try:
+            truncated_password = plain_password[:72] if len(plain_password) > 72 else plain_password
+            result = pwd_context.verify(truncated_password, hashed_password)
+            print(f"DEBUG: Truncated bcrypt verification result: {result}")
+            return result
+        except Exception as e2:
+            print(f"DEBUG: Truncated bcrypt verification failed: {e2}")
+        print("DEBUG: All verification methods failed")
+        return False
 
 
 def get_password_hash(password: str) -> str:
