@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '../providers'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -253,32 +254,49 @@ export default function MentorshipPage() {
 
   const fetchMentors = async () => {
     try {
-      const token = localStorage.getItem('access_token')
-      if (!token) return
+      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      if (useSupabase) {
+        let query = supabase
+          .from('profiles')
+          .select('*')
+          .eq('role','mentor')
+          .eq('is_available_for_mentorship', true)
 
-      const queryParams = new URLSearchParams()
-      if (searchFilters.specializations) {
-        queryParams.append('specializations', JSON.stringify(searchFilters.specializations.split(',').map(s => s.trim())))
-      }
-      if (searchFilters.target_band_score) {
-        queryParams.append('target_band_score', searchFilters.target_band_score)
-      }
-      if (searchFilters.timezone) {
-        queryParams.append('timezone', searchFilters.timezone)
-      }
+        if (searchFilters.timezone) query = query.eq('timezone', searchFilters.timezone)
+        // simple contains on specializations if provided
+        if (searchFilters.specializations) {
+          // NOTE: for better search use full text or jsonb @> with exact array
+          query = query.contains('specializations', [searchFilters.specializations.split(',')[0].trim()])
+        }
 
-      const response = await fetch(`/api/v1/mentorship/mentors?${queryParams.toString()}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setMentors(data.mentors || [])
+        const { data, error } = await query
+        if (error) throw error
+        setMentors((data as any) || [])
       } else {
-        const raw = await response.text().catch(() => '')
-        let detail = ''
-        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
-        showMessage(`Failed to fetch mentors: ${detail}`, 'error')
+        const token = localStorage.getItem('access_token')
+        if (!token) return
+        const queryParams = new URLSearchParams()
+        if (searchFilters.specializations) {
+          queryParams.append('specializations', JSON.stringify(searchFilters.specializations.split(',').map(s => s.trim())))
+        }
+        if (searchFilters.target_band_score) {
+          queryParams.append('target_band_score', searchFilters.target_band_score)
+        }
+        if (searchFilters.timezone) {
+          queryParams.append('timezone', searchFilters.timezone)
+        }
+        const response = await fetch(`/api/v1/mentorship/mentors?${queryParams.toString()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setMentors(data.mentors || [])
+        } else {
+          const raw = await response.text().catch(() => '')
+          let detail = ''
+          try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+          showMessage(`Failed to fetch mentors: ${detail}`, 'error')
+        }
       }
     } catch (error) {
       console.error('Error fetching mentors:', error)
@@ -310,42 +328,56 @@ export default function MentorshipPage() {
     }
   }
 
-  const handleConnect = async (mentorId: number) => {
+  const handleConnect = async (mentorId: any) => {
     const actionKey = `connect_${mentorId}`
     setActionLoadingState(actionKey, true)
     
     try {
-      const token = localStorage.getItem('access_token')
-      if (!token) return
-
-      const response = await fetch(`/api/v1/mentorship/connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Bearer ${token}`
-        },
-        body: new URLSearchParams({
-          mentor_id: mentorId.toString(),
-          message: requestMessage || 'Hi! I would like to connect with you for IELTS preparation.',
-          goals: JSON.stringify(requestGoals ? requestGoals.split(',').map(s => s.trim()) : ['Improve IELTS score', 'Get personalized feedback']),
-          target_band_score: requestTargetBandScore || '7.5',
-          focus_areas: JSON.stringify(requestFocusAreas ? requestFocusAreas.split(',').map(s => s.trim()) : ['Writing', 'Speaking'])
+      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      if (useSupabase) {
+        const { data: session } = await supabase.auth.getSession()
+        if (!session?.session?.user) {
+          showMessage('Please sign in to connect.', 'error')
+          return
+        }
+        const { error } = await supabase.rpc('request_connection', {
+          p_mentor_id: mentorId,
+          p_message: requestMessage || null,
+          p_goals: requestGoals ? requestGoals.split(',').map(s => s.trim()) : null,
+          p_target_band_score: requestTargetBandScore ? Number(requestTargetBandScore) : null,
+          p_focus_areas: requestFocusAreas ? requestFocusAreas.split(',').map(s => s.trim()) : null
         })
-      })
-
-      if (response.ok) {
+        if (error) throw error
         showMessage('Connection request sent successfully!', 'success')
-        fetchConnections() // Refresh connections
-        // Clear form
-        setRequestMessage('')
-        setRequestGoals('')
-        setRequestTargetBandScore('')
-        setRequestFocusAreas('')
+        fetchConnections()
+        setRequestMessage(''); setRequestGoals(''); setRequestTargetBandScore(''); setRequestFocusAreas('')
       } else {
-        const raw = await response.text().catch(() => '')
-        let detail = ''
-        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
-        showMessage(`Failed to send request: ${detail}`, 'error')
+        const token = localStorage.getItem('access_token')
+        if (!token) return
+        const response = await fetch(`/api/v1/mentorship/connect`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Bearer ${token}`
+          },
+          body: new URLSearchParams({
+            mentor_id: String(mentorId),
+            message: requestMessage || 'Hi! I would like to connect with you for IELTS preparation.',
+            goals: JSON.stringify(requestGoals ? requestGoals.split(',').map(s => s.trim()) : ['Improve IELTS score', 'Get personalized feedback']),
+            target_band_score: requestTargetBandScore || '7.5',
+            focus_areas: JSON.stringify(requestFocusAreas ? requestFocusAreas.split(',').map(s => s.trim()) : ['Writing', 'Speaking'])
+          })
+        })
+        if (response.ok) {
+          showMessage('Connection request sent successfully!', 'success')
+          fetchConnections()
+          setRequestMessage(''); setRequestGoals(''); setRequestTargetBandScore(''); setRequestFocusAreas('')
+        } else {
+          const raw = await response.text().catch(() => '')
+          let detail = ''
+          try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+          showMessage(`Failed to send request: ${detail}`, 'error')
+        }
       }
     } catch (error) {
       console.error('Error sending connection request:', error)

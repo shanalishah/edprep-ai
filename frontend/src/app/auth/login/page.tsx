@@ -20,6 +20,7 @@ import {
   AcademicCapIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import { supabase } from '@/lib/supabaseClient'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -46,28 +47,47 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
     try {
-      const formData = new URLSearchParams()
-      formData.append('username', data.email)
-      formData.append('password', data.password)
-
-      // Use relative path so Next.js rewrites proxy to the backend
-      const response = await fetch(`/api/v1/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData.toString(),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.detail || 'Login failed')
+      const provider = process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'backend'
+      if (provider === 'supabase') {
+        const { data: auth, error } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password
+        })
+        if (error) throw new Error(error.message)
+        const user = auth.user
+        // fetch profile for display info
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        login(auth.session?.access_token || 'supabase', {
+          id: user.id,
+          email: user.email,
+          username: profile?.username || user.email?.split('@')[0],
+          full_name: profile?.full_name || user.email,
+          role: profile?.role || 'student'
+        })
+        toast.success('Welcome back!')
+        router.push('/dashboard')
+      } else {
+        const formData = new URLSearchParams()
+        formData.append('username', data.email)
+        formData.append('password', data.password)
+        const response = await fetch(`/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString(),
+        })
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.detail || 'Login failed')
+        }
+        const result = await response.json()
+        login(result.access_token, result.user)
+        toast.success('Welcome back!')
+        router.push('/dashboard')
       }
-
-      const result = await response.json()
-      login(result.access_token, result.user)
-      toast.success('Welcome back!')
-      router.push('/dashboard')
       
     } catch (error: any) {
       toast.error(error.message || 'Login failed. Please check your credentials.')
