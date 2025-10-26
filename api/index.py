@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
+import json
 
 app = FastAPI()
 
@@ -12,9 +12,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"message": "IELTS Master Platform API", "status": "running"}
+
 @app.get("/health")
 async def health():
-    return {"status": "ok", "message": "Vercel backend is working"}
+    return {"status": "healthy", "service": "IELTS Master Platform", "version": "2.1.2"}
 
 @app.get("/api/health")
 async def api_health():
@@ -31,7 +35,19 @@ async def get_mentors():
                 "full_name": "Dr. Emma Chen",
                 "email": "dr.emma.chen@edprep.ai",
                 "role": "mentor",
-                "is_available": True
+                "is_available": True,
+                "profile": {
+                    "bio": "Former Cambridge examiner with 10+ years of experience.",
+                    "teaching_experience": "10+ years as an IELTS examiner and tutor.",
+                    "specializations": ["Writing Task 2", "Speaking Fluency"],
+                    "certifications": ["IELTS Certified Examiner", "TESOL Certificate"],
+                    "timezone": "UTC",
+                    "available_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                    "available_hours": ["09:00-17:00"],
+                    "is_available_for_mentorship": True,
+                    "max_mentees": 5,
+                    "mentorship_status": "available"
+                }
             }
         ],
         "count": 1
@@ -76,7 +92,7 @@ async def get_messages(connection_id: int):
                 "connection_id": connection_id,
                 "sender_id": 2,
                 "message_type": "text",
-                "content": "Hello Dr. Emma!",
+                "content": "Hello Dr. Emma! I'm excited to start our mentorship journey.",
                 "is_read": False,
                 "is_edited": False,
                 "created_at": "2025-01-01T00:00:00",
@@ -87,8 +103,47 @@ async def get_messages(connection_id: int):
                     "email": "ahmed.hassan@student.com",
                     "role": "student"
                 }
+            },
+            {
+                "id": 2,
+                "connection_id": connection_id,
+                "sender_id": 1,
+                "message_type": "text",
+                "content": "Hello Ahmed! Welcome to our mentorship program. I'm here to help you achieve your IELTS goals.",
+                "is_read": False,
+                "is_edited": False,
+                "created_at": "2025-01-01T00:05:00",
+                "sender": {
+                    "id": 1,
+                    "username": "dr.emma.chen",
+                    "full_name": "Dr. Emma Chen",
+                    "email": "dr.emma.chen@edprep.ai",
+                    "role": "mentor"
+                }
             }
         ]
+    }
+
+@app.post("/api/v1/mentorship/connections/{connection_id}/messages")
+async def send_message(connection_id: int, content: str, message_type: str = "text"):
+    return {
+        "data": {
+            "id": 3,
+            "connection_id": connection_id,
+            "sender_id": 2,
+            "message_type": message_type,
+            "content": content,
+            "is_read": False,
+            "is_edited": False,
+            "created_at": "2025-01-01T00:10:00",
+            "sender": {
+                "id": 2,
+                "username": "ahmed_hassan",
+                "full_name": "Ahmed Hassan",
+                "email": "ahmed.hassan@student.com",
+                "role": "student"
+            }
+        }
     }
 
 @app.post("/api/v1/auth/login")
