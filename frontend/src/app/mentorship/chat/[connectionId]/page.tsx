@@ -57,7 +57,7 @@ export default function ChatPage() {
   const { isAuthenticated, user, loading: authLoading } = useAuth()
   const router = useRouter()
   const params = useParams()
-  const connectionId = params.connectionId as string
+  const connectionId = params?.connectionId as string
   
   const [connection, setConnection] = useState<Connection | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -84,7 +84,7 @@ export default function ChatPage() {
   }, [isAuthenticated, authLoading, router])
 
   useEffect(() => {
-    if (isAuthenticated && connectionId) {
+    if (isAuthenticated && connectionId && connectionId !== 'undefined') {
       setLoading(true)
       fetchConnection()
       fetchMessages()
@@ -102,15 +102,21 @@ export default function ChatPage() {
 
       // Use production API URL for deployed version
       const API_URL = 'https://web-production-4d7f.up.railway.app'
+      console.log('Fetching connection:', connectionId)
+      
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
+      console.log('Connection response status:', response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log('Connection data:', data)
         setConnection(data.connection)
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+        console.error('Connection error:', errorData)
         setError(`Failed to load connection details: ${errorData.detail}`)
       }
     } catch (error) {
@@ -132,15 +138,21 @@ export default function ChatPage() {
 
       // Use production API URL for deployed version
       const API_URL = 'https://web-production-4d7f.up.railway.app'
+      console.log('Fetching messages for connection:', connectionId)
+      
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
+      console.log('Messages response status:', response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log('Messages data:', data)
         setMessages(data.messages || [])
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+        console.error('Messages error:', errorData)
         setError(`Failed to load messages: ${errorData.detail}`)
       }
     } catch (error) {
@@ -198,6 +210,9 @@ export default function ChatPage() {
     }
   }
 
+  // Debug logging
+  console.log('ChatPage render:', { connectionId, isAuthenticated, user: user?.email, loading, error })
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -209,12 +224,31 @@ export default function ChatPage() {
     )
   }
 
+  if (!connectionId || connectionId === 'undefined') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h3 className="text-lg font-semibold text-red-800 mb-2">Invalid Connection</h3>
+          <p className="text-red-600 mb-4">No connection ID provided or invalid connection ID.</p>
+          <button
+            onClick={() => router.push('/mentorship')}
+            className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+          >
+            Back to Mentorship
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading chat...</p>
+          <p className="text-sm text-gray-500 mt-2">Connection ID: {connectionId}</p>
         </div>
       </div>
     )
@@ -227,6 +261,7 @@ export default function ChatPage() {
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Chat</h3>
           <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-sm text-gray-500 mb-4">Connection ID: {connectionId}</p>
           <div className="space-y-2">
             <button
               onClick={() => {
@@ -257,6 +292,7 @@ export default function ChatPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="text-sm text-gray-500 mt-2">Connection ID: {connectionId}</p>
         </div>
       </div>
     )
@@ -284,7 +320,7 @@ export default function ChatPage() {
                   }
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Status: {connection.status}
+                  Status: {connection.status} | ID: {connectionId}
                 </p>
               </div>
             </div>
