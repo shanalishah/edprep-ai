@@ -1,2 +1,1 @@
-fastapi==0.117.1
-uvicorn==0.37.0
+# No external dependencies needed for basic HTTP server
