@@ -3,7 +3,6 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT",
-    "postDeployCommand": "./railway_deployment_hook.sh"
+    "startCommand": "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
   }
 }
