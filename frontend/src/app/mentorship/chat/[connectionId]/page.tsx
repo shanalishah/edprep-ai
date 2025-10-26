@@ -100,7 +100,8 @@ export default function ChatPage() {
         return
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-4d7f.up.railway.app'
+      // Use production API URL for deployed version
+      const API_URL = 'https://web-production-4d7f.up.railway.app'
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -129,7 +130,8 @@ export default function ChatPage() {
         return
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-4d7f.up.railway.app'
+      // Use production API URL for deployed version
+      const API_URL = 'https://web-production-4d7f.up.railway.app'
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -157,7 +159,8 @@ export default function ChatPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-4d7f.up.railway.app'
+      // Use production API URL for deployed version
+      const API_URL = 'https://web-production-4d7f.up.railway.app'
       const formData = new FormData()
       formData.append('content', newMessage)
       formData.append('message_type', 'text')
