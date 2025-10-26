@@ -100,7 +100,8 @@ export default function ChatPage() {
         return
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}`, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-4d7f.up.railway.app'
+      const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
@@ -128,7 +129,8 @@ export default function ChatPage() {
         return
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}/messages`, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-4d7f.up.railway.app'
+      const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
@@ -155,11 +157,12 @@ export default function ChatPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-4d7f.up.railway.app'
       const formData = new FormData()
       formData.append('content', newMessage)
       formData.append('message_type', 'text')
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}/messages`, {
+      const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
@@ -194,7 +197,7 @@ export default function ChatPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Authenticating...</p>
@@ -205,7 +208,7 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading chat...</p>
@@ -216,30 +219,29 @@ export default function ChatPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Chat</h3>
-            <p className="text-red-600 mb-4">{error}</p>
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  setError(null)
-                  setLoading(true)
-                  fetchConnection()
-                  fetchMessages()
-                }}
-                className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-              >
-                Retry
-              </button>
-              <button
-                onClick={() => router.push('/mentorship')}
-                className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
-              >
-                Back to Mentorship
-              </button>
-            </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Chat</h3>
+          <p className="text-red-600 mb-4">{error}</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                setError(null)
+                setLoading(true)
+                fetchConnection()
+                fetchMessages()
+              }}
+              className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => router.push('/mentorship')}
+              className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+            >
+              Back to Mentorship
+            </button>
           </div>
         </div>
       </div>
@@ -248,7 +250,7 @@ export default function ChatPage() {
 
   if (!isAuthenticated || !user || !connection) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
@@ -266,7 +268,7 @@ export default function ChatPage() {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.push('/mentorship')}
-                className="p-2 hover:bg-gray-100 rounded-full"
+                className="p-2 hover:bg-gray-100 rounded-full text-blue-600 hover:text-blue-800"
               >
                 ← Back
               </button>
