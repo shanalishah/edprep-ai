@@ -135,6 +135,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (isAuthenticated && connectionId) {
+      setLoading(true)
       fetchConnection()
       fetchMessages()
     }
@@ -143,7 +144,11 @@ export default function ChatPage() {
   const fetchConnection = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      if (!token) return
+      if (!token) {
+        setError('No authentication token found')
+        setLoading(false)
+        return
+      }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -153,18 +158,25 @@ export default function ChatPage() {
         const data = await response.json()
         setConnection(data.connection)
       } else {
-        setError('Failed to load connection details')
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+        setError(`Failed to load connection details: ${errorData.detail}`)
       }
     } catch (error) {
       console.error('Error fetching connection:', error)
       setError('Failed to load connection details')
+    } finally {
+      setLoading(false)
     }
   }
 
   const fetchMessages = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      if (!token) return
+      if (!token) {
+        setError('No authentication token found')
+        setLoading(false)
+        return
+      }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -174,7 +186,8 @@ export default function ChatPage() {
         const data = await response.json()
         setMessages(data.messages || [])
       } else {
-        setError('Failed to load messages')
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+        setError(`Failed to load messages: ${errorData.detail}`)
       }
     } catch (error) {
       console.error('Error fetching messages:', error)
@@ -312,12 +325,55 @@ export default function ChatPage() {
     }
   }
 
-  if (authLoading || loading) {
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Authenticating...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading chat...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Chat</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  setError(null)
+                  setLoading(true)
+                  fetchConnection()
+                  fetchMessages()
+                }}
+                className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+              >
+                Retry
+              </button>
+              <button
+                onClick={() => router.push('/mentorship')}
+                className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+              >
+                Back to Mentorship
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     )
