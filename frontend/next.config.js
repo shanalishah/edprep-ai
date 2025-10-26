@@ -13,12 +13,12 @@ const nextConfig = {
     // Enable modern bundling
     esmExternals: true,
   },
-  // Handle API routes properly
+  // Handle API routes properly - use same domain for Vercel
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/:path*`,
+        destination: '/api/:path*', // Use same domain for Vercel backend
       },
     ]
   },
