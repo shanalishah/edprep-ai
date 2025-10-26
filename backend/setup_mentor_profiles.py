@@ -1,96 +1,76 @@
-#!/usr/bin/env python3
-"""
-Setup mentor profiles for testing
-"""
-
-import sys
+import requests
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import json
 
-from app.database import get_db
-from app.models.mentorship import UserProfile
-from app.models.user import User
-from sqlalchemy.orm import Session
+BACKEND_URL = os.getenv("BACKEND_URL", "https://web-production-4d7f.up.railway.app")
 
-def setup_mentor_profiles():
-    """Set up mentor profiles for testing"""
-    db = next(get_db())
+def setup_mentor_profile(email, password, bio, teaching_experience, specializations):
+    # First login to get token
+    login_url = f"{BACKEND_URL}/api/v1/auth/login"
+    login_payload = {
+        "username": email,
+        "password": password
+    }
+    login_response = requests.post(login_url, data=login_payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
     
-    try:
-        # Get all users with mentor/tutor roles
-        mentors = db.query(User).filter(User.role.in_(["mentor", "tutor"])).all()
-        
-        print(f"Found {len(mentors)} mentors/tutors to set up...")
-        
-        for mentor in mentors:
-            # Check if profile already exists
-            existing_profile = db.query(UserProfile).filter(UserProfile.user_id == mentor.id).first()
-            
-            if existing_profile:
-                print(f"Profile already exists for {mentor.username}")
-                continue
-            
-            # Create profile based on role
-            if mentor.role == "mentor":
-                profile_data = {
-                    "user_id": mentor.id,
-                    "is_available_for_mentorship": True,
-                    "mentorship_status": "available",
-                    "max_mentees": 5,
-                    "bio": f"Experienced IELTS mentor with expertise in {mentor.username} preparation. I help students achieve their target band scores through personalized guidance and practice.",
-                    "teaching_experience": "5+ years of IELTS teaching experience",
-                    "specializations": ["Writing Task 2", "Speaking", "Reading"],
-                    "certifications": ["IELTS Teacher Training Certificate", "TESOL Certificate"],
-                    "timezone": "UTC+8",
-                    "available_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-                    "available_hours": ["morning", "afternoon", "evening"],
-                    "total_mentees_helped": 0,
-                    "average_rating": 0.0,
-                    "total_sessions_conducted": 0
-                }
-            else:  # tutor
-                profile_data = {
-                    "user_id": mentor.id,
-                    "is_available_for_mentorship": True,
-                    "mentorship_status": "available",
-                    "max_mentees": 3,
-                    "bio": f"Professional IELTS tutor specializing in {mentor.username} preparation. I provide comprehensive support to help students excel in all IELTS components.",
-                    "teaching_experience": "3+ years of IELTS tutoring experience",
-                    "specializations": ["Writing", "Speaking", "Listening", "Reading"],
-                    "certifications": ["IELTS Tutor Certificate", "English Teaching License"],
-                    "timezone": "UTC+8",
-                    "available_days": ["Monday", "Wednesday", "Friday", "Saturday"],
-                    "available_hours": ["afternoon", "evening"],
-                    "total_mentees_helped": 0,
-                    "average_rating": 0.0,
-                    "total_sessions_conducted": 0
-                }
-            
-            # Create the profile
-            profile = UserProfile(**profile_data)
-            db.add(profile)
-            print(f"Created profile for {mentor.username} ({mentor.role})")
-        
-        db.commit()
-        print("✅ All mentor profiles created successfully!")
-        
-        # Verify the setup
-        print("\n📊 Verification:")
-        available_mentors = db.query(User, UserProfile).join(
-            UserProfile, User.id == UserProfile.user_id
-        ).filter(
-            UserProfile.is_available_for_mentorship == True
-        ).all()
-        
-        print(f"Total available mentors: {len(available_mentors)}")
-        for user, profile in available_mentors:
-            print(f"  - {user.username} ({user.role}): {profile.bio[:50]}...")
-            
-    except Exception as e:
-        print(f"❌ Error setting up mentor profiles: {e}")
-        db.rollback()
-    finally:
-        db.close()
+    if login_response.status_code != 200:
+        print(f"❌ Failed to login {email}")
+        return False
+    
+    token = login_response.json().get("access_token")
+    if not token:
+        print(f"❌ No token for {email}")
+        return False
+    
+    # Create mentor profile
+    profile_url = f"{BACKEND_URL}/api/v1/mentorship/profile"
+    profile_payload = {
+        "bio": bio,
+        "teaching_experience": teaching_experience,
+        "specializations": json.dumps(specializations),
+        "certifications": json.dumps(["IELTS Certified Examiner", "TESOL Certificate"]),
+        "timezone": "UTC",
+        "available_days": json.dumps(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]),
+        "available_hours": json.dumps(["09:00-17:00"]),
+        "is_available_for_mentorship": "true",
+        "max_mentees": "5"
+    }
+    
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    
+    profile_response = requests.post(profile_url, data=profile_payload, headers=headers)
+    
+    if profile_response.status_code == 200:
+        print(f"✅ Profile created for {email}")
+        return True
+    else:
+        print(f"❌ Failed to create profile for {email}: {profile_response.json()}")
+        return False
+
+def main():
+    print("🚀 Setting up mentor/tutor profiles on Railway...")
+    print(f"Backend URL: {BACKEND_URL}")
+    print("-" * 50)
+
+    mentors_to_setup = [
+        ("dr.emma.chen@edprep.ai", "mentor123", "Former Cambridge examiner with 10+ years of experience. Specializes in IELTS Writing Task 2 and Speaking fluency.", "10+ years as an IELTS examiner and tutor.", ["Writing Task 2", "Speaking Fluency"]),
+        ("prof.david.kim@edprep.ai", "mentor123", "Experienced IELTS mentor with expertise in academic writing and test strategies.", "8+ years of experience as an IELTS mentor.", ["Academic Writing", "Test Strategies"]),
+        ("ms.lisa.patel@edprep.ai", "tutor123", "Dedicated IELTS tutor specializing in Reading and Listening comprehension.", "6+ years as an IELTS tutor.", ["Reading Comprehension", "Listening Skills"]),
+        ("ms.sarah.wilson@edprep.ai", "tutor123", "Professional IELTS tutor with focus on Speaking and Writing improvement.", "7+ years of experience in IELTS tutoring.", ["Speaking Fluency", "Writing Improvement"]),
+    ]
+
+    success_count = 0
+    
+    for email, password, bio, teaching_experience, specializations in mentors_to_setup:
+        if setup_mentor_profile(email, password, bio, teaching_experience, specializations):
+            success_count += 1
+
+    print("-" * 50)
+    print(f"📊 Results: {success_count}/{len(mentors_to_setup)} mentor profiles created successfully")
+    print("\n🔍 Now test the mentor search functionality!")
 
 if __name__ == "__main__":
-    setup_mentor_profiles()
+    main()
