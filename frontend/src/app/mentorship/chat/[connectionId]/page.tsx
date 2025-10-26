@@ -137,8 +137,7 @@ export default function ChatPage() {
       console.log(`🔍 Fetching connection ${connectionId} from: ${API_URL}`)
       
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        timeout: 10000
+        headers: { 'Authorization': `Bearer ${token}` }
       })
 
       console.log(`📡 Connection response: ${response.status}`)
@@ -193,8 +192,7 @@ export default function ChatPage() {
       console.log(`🔍 Fetching messages for connection ${connectionId} from: ${API_URL}`)
       
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        timeout: 10000
+        headers: { 'Authorization': `Bearer ${token}` }
       })
 
       console.log(`📡 Messages response: ${response.status}`)
@@ -238,8 +236,7 @@ export default function ChatPage() {
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
-        body: formData,
-        timeout: 10000
+        body: formData
       })
 
       if (response.ok) {
