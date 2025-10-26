@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../../providers'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 
 interface Message {
   id: number
@@ -56,8 +56,9 @@ interface Connection {
 export default function ChatPage() {
   const { isAuthenticated, user, loading: authLoading } = useAuth()
   const router = useRouter()
+  const params = useParams()
   
-  // Get connection ID from URL params
+  // Multiple ways to get connection ID for maximum reliability
   const [connectionId, setConnectionId] = useState<string | null>(null)
   const [connection, setConnection] = useState<Connection | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -65,16 +66,36 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const maxRetries = 3
 
-  // Get connection ID from URL
+  // Robust connection ID extraction
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Method 1: From URL params
+      const urlParams = new URLSearchParams(window.location.search)
+      const idFromQuery = urlParams.get('connectionId')
+      
+      // Method 2: From pathname
       const pathParts = window.location.pathname.split('/')
-      const id = pathParts[pathParts.length - 1]
-      console.log('Extracted connection ID from URL:', id)
-      setConnectionId(id)
+      const idFromPath = pathParts[pathParts.length - 1]
+      
+      // Method 3: From hash
+      const idFromHash = window.location.hash.replace('#', '')
+      
+      // Use the first valid ID found
+      const validId = idFromQuery || idFromPath || idFromHash
+      
+      if (validId && validId !== 'undefined' && validId !== 'null' && validId !== 'chat') {
+        console.log('✅ Connection ID found:', validId)
+        setConnectionId(validId)
+      } else {
+        console.error('❌ No valid connection ID found')
+        setError('No valid connection ID provided. Please select a connection from the mentorship page.')
+        setLoading(false)
+      }
     }
   }, [])
 
@@ -96,6 +117,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (isAuthenticated && connectionId && connectionId !== 'undefined' && connectionId !== 'null') {
       setLoading(true)
+      setError(null)
       fetchConnection()
       fetchMessages()
     }
@@ -105,33 +127,53 @@ export default function ChatPage() {
     try {
       const token = localStorage.getItem('access_token')
       if (!token) {
-        setError('No authentication token found')
+        setError('No authentication token found. Please log in again.')
         setLoading(false)
         return
       }
 
-      // Use production API URL for deployed version
+      // Use production API URL
       const API_URL = 'https://web-production-4d7f.up.railway.app'
-      console.log('Fetching connection:', connectionId)
+      console.log(`🔍 Fetching connection ${connectionId} from: ${API_URL}`)
       
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        timeout: 10000
       })
 
-      console.log('Connection response status:', response.status)
+      console.log(`📡 Connection response: ${response.status}`)
 
       if (response.ok) {
         const data = await response.json()
-        console.log('Connection data:', data)
+        console.log('✅ Connection data:', data)
         setConnection(data.connection)
+        setRetryCount(0) // Reset retry count on success
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
-        console.error('Connection error:', errorData)
+        console.error('❌ Connection error:', errorData)
+        
+        // Retry logic
+        if (retryCount < maxRetries) {
+          console.log(`🔄 Retrying connection fetch (${retryCount + 1}/${maxRetries})`)
+          setRetryCount(prev => prev + 1)
+          setTimeout(() => fetchConnection(), 2000)
+          return
+        }
+        
         setError(`Failed to load connection details: ${errorData.detail}`)
       }
     } catch (error) {
-      console.error('Error fetching connection:', error)
-      setError('Failed to load connection details')
+      console.error('❌ Error fetching connection:', error)
+      
+      // Retry logic for network errors
+      if (retryCount < maxRetries) {
+        console.log(`🔄 Retrying connection fetch due to network error (${retryCount + 1}/${maxRetries})`)
+        setRetryCount(prev => prev + 1)
+        setTimeout(() => fetchConnection(), 2000)
+        return
+      }
+      
+      setError('Failed to load connection details: Network error or server unreachable.')
     } finally {
       setLoading(false)
     }
@@ -141,33 +183,34 @@ export default function ChatPage() {
     try {
       const token = localStorage.getItem('access_token')
       if (!token) {
-        setError('No authentication token found')
+        setError('No authentication token found. Please log in again.')
         setLoading(false)
         return
       }
 
-      // Use production API URL for deployed version
+      // Use production API URL
       const API_URL = 'https://web-production-4d7f.up.railway.app'
-      console.log('Fetching messages for connection:', connectionId)
+      console.log(`🔍 Fetching messages for connection ${connectionId} from: ${API_URL}`)
       
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        timeout: 10000
       })
 
-      console.log('Messages response status:', response.status)
+      console.log(`📡 Messages response: ${response.status}`)
 
       if (response.ok) {
         const data = await response.json()
-        console.log('Messages data:', data)
+        console.log('✅ Messages data:', data)
         setMessages(data.messages || [])
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
-        console.error('Messages error:', errorData)
+        console.error('❌ Messages error:', errorData)
         setError(`Failed to load messages: ${errorData.detail}`)
       }
     } catch (error) {
-      console.error('Error fetching messages:', error)
-      setError('Failed to load messages')
+      console.error('❌ Error fetching messages:', error)
+      setError('Failed to load messages: Network error or server unreachable.')
     } finally {
       setLoading(false)
     }
@@ -179,18 +222,24 @@ export default function ChatPage() {
     setSending(true)
     try {
       const token = localStorage.getItem('access_token')
-      if (!token) return
+      if (!token) {
+        setError('No authentication token found. Please log in again.')
+        setSending(false)
+        return
+      }
 
-      // Use production API URL for deployed version
+      // Use production API URL
       const API_URL = 'https://web-production-4d7f.up.railway.app'
       const formData = new FormData()
       formData.append('content', newMessage)
       formData.append('message_type', 'text')
 
+      console.log(`📤 Sending message to connection ${connectionId}`)
       const response = await fetch(`${API_URL}/api/v1/mentorship/connections/${connectionId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
+        body: formData,
+        timeout: 10000
       })
 
       if (response.ok) {
@@ -199,13 +248,15 @@ export default function ChatPage() {
           setMessages(prev => [...prev, data.data])
         }
         setNewMessage('')
+        console.log('✅ Message sent successfully')
       } else {
         const errorData = await response.json()
         setError(`Failed to send message: ${errorData.detail}`)
+        console.error('❌ Send message error:', errorData)
       }
     } catch (error) {
-      console.error('Error sending message:', error)
-      setError('Failed to send message')
+      console.error('❌ Error sending message:', error)
+      setError('Failed to send message: Network error or server unreachable.')
     } finally {
       setSending(false)
     }
@@ -220,8 +271,23 @@ export default function ChatPage() {
     }
   }
 
+  const handleRetry = () => {
+    setError(null)
+    setRetryCount(0)
+    setLoading(true)
+    fetchConnection()
+    fetchMessages()
+  }
+
   // Debug logging
-  console.log('ChatPage render:', { connectionId, isAuthenticated, user: user?.email, loading, error })
+  console.log('ChatPage render:', { 
+    connectionId, 
+    isAuthenticated, 
+    user: user?.email, 
+    loading, 
+    error,
+    retryCount 
+  })
 
   if (authLoading) {
     return (
@@ -240,8 +306,10 @@ export default function ChatPage() {
         <div className="text-center max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h3 className="text-lg font-semibold text-red-800 mb-2">Invalid Connection</h3>
-          <p className="text-red-600 mb-4">No connection ID provided or invalid connection ID.</p>
-          <p className="text-sm text-gray-500 mb-4">URL: {typeof window !== 'undefined' ? window.location.pathname : 'N/A'}</p>
+          <p className="text-red-600 mb-4">No valid connection ID provided.</p>
+          <p className="text-sm text-gray-500 mb-4">
+            URL: {typeof window !== 'undefined' ? window.location.pathname : 'N/A'}
+          </p>
           <button
             onClick={() => router.push('/mentorship')}
             className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
@@ -260,6 +328,9 @@ export default function ChatPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading chat...</p>
           <p className="text-sm text-gray-500 mt-2">Connection ID: {connectionId}</p>
+          {retryCount > 0 && (
+            <p className="text-sm text-yellow-600 mt-2">Retrying... ({retryCount}/{maxRetries})</p>
+          )}
         </div>
       </div>
     )
@@ -275,15 +346,10 @@ export default function ChatPage() {
           <p className="text-sm text-gray-500 mb-4">Connection ID: {connectionId}</p>
           <div className="space-y-2">
             <button
-              onClick={() => {
-                setError(null)
-                setLoading(true)
-                fetchConnection()
-                fetchMessages()
-              }}
+              onClick={handleRetry}
               className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
             >
-              Retry
+              Retry ({retryCount}/{maxRetries})
             </button>
             <button
               onClick={() => router.push('/mentorship')}
@@ -311,7 +377,7 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Simple Header */}
+      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -339,7 +405,7 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Simple Chat Container */}
+      {/* Chat Container */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="bg-white rounded-lg shadow border overflow-hidden">
           {/* Messages Area */}
@@ -376,7 +442,7 @@ export default function ChatPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Simple Message Input */}
+          {/* Message Input */}
           <div className="border-t p-4">
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
