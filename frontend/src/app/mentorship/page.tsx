@@ -1343,13 +1343,16 @@ export default function MentorshipPage() {
                           <div className="flex space-x-2">
                             {connection.status === 'active' && (
                               <>
-                                <Link
-                                  href={`/mentorship/chat/${connection.id}`}
+                                <button
+                                  onClick={() => {
+                                    console.log('Navigating to chat for connection:', connection.id)
+                                    router.push(`/mentorship/chat/${connection.id}`)
+                                  }}
                                   className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                                 >
                                   <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
                                   Message
-                                </Link>
+                                </button>
                                 <button
                                   onClick={() => {
                                     setSelectedConnectionForSession(connection)
