@@ -125,16 +125,48 @@ export const mentors = [
   }
 ]
 
-// Shared connections array
-export let connections: any[] = []
+// Shared connections array - use getter/setter functions
+let _connections: any[] = []
+let _connectionIdCounter = 1
+
+export function getConnections() {
+  return _connections
+}
+
+export function addConnection(connection: any) {
+  connection.id = _connectionIdCounter++
+  _connections.push(connection)
+  return connection
+}
+
+export function getConnectionIdCounter() {
+  return _connectionIdCounter
+}
 
 // Shared messages array
-export let messages: any[] = []
+let _messages: any[] = []
+let _messageIdCounter = 1
+
+export function getMessages() {
+  return _messages
+}
+
+export function addMessage(message: any) {
+  message.id = _messageIdCounter++
+  _messages.push(message)
+  return message
+}
 
 // Shared sessions array
-export let sessions: any[] = []
+let _sessions: any[] = []
+let _sessionIdCounter = 1
 
-// Counter for generating IDs
-export let connectionIdCounter = 1
-export let messageIdCounter = 1
-export let sessionIdCounter = 1
+export function getSessions() {
+  return _sessions
+}
+
+export function addSession(session: any) {
+  session.id = _sessionIdCounter++
+  _sessions.push(session)
+  return session
+}

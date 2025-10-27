@@ -1,7 +1,7 @@
 // Vercel serverless function for mentorship connections
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { users, connections } from '../../../../data/shared'
+import { users, getConnections } from '../../../../data/shared'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter connections for current user
+    const connections = getConnections()
     const userConnections = connections.filter(
       conn => conn.mentor_id === currentUser.id || conn.mentee_id === currentUser.id
     )

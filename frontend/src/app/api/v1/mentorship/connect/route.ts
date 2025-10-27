@@ -1,7 +1,7 @@
 // Vercel serverless function for mentorship connect
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { users, connections, connectionIdCounter } from '../../../../data/shared'
+import { users, getConnections, addConnection } from '../../../../data/shared'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if connection already exists
+    const connections = getConnections()
     const existingConnection = connections.find(
       conn => conn.mentor_id === mentor_id && conn.mentee_id === currentUser.id
     )
@@ -59,7 +60,6 @@ export async function POST(request: NextRequest) {
 
     // Create new connection
     const newConnection = {
-      id: connectionIdCounter++,
       mentor_id,
       mentee_id: currentUser.id,
       status: 'pending',
@@ -72,12 +72,12 @@ export async function POST(request: NextRequest) {
       mentee: currentUser
     }
 
-    connections.push(newConnection)
+    const savedConnection = addConnection(newConnection)
 
     return NextResponse.json({
       success: true,
       message: 'Connection request sent successfully',
-      connection: newConnection
+      connection: savedConnection
     })
 
   } catch (error) {
