@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../../providers'
 import { useRouter, useParams } from 'next/navigation'
+import { supabase } from '../../../../lib/supabaseClient'
 
 interface Message {
   id: number
@@ -125,40 +126,63 @@ export default function ChatPage() {
 
   const fetchConnection = async () => {
     try {
-      const token = localStorage.getItem('access_token')
-      if (!token) {
-        setError('No authentication token found. Please log in again.')
-        setLoading(false)
-        return
-      }
+      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      if (useSupabase) {
+        const idNum = Number(connectionId)
+        const { data: conn, error } = await supabase
+          .from('mentorship_connections')
+          .select('*')
+          .eq('id', idNum)
+          .single()
+        if (error) throw error
 
-      // Use relative API path; Next.js rewrites will proxy to backend
-      console.log(`🔍 Fetching connection ${connectionId}`)
-      
-      const response = await fetch(`/api/v1/mentorship/connections/${connectionId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+        // Fetch profiles for mentor and mentee
+        const { data: profs, error: perr } = await supabase
+          .from('profiles')
+          .select('id,username,full_name,email,role')
+          .in('id', [conn.mentor_id, conn.mentee_id])
+        if (perr) throw perr
+        const idToProfile: Record<string, any> = {}
+        ;(profs || []).forEach((p: any) => { idToProfile[p.id] = p })
 
-      console.log(`📡 Connection response: ${response.status}`)
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log('✅ Connection data:', data)
-        setConnection(data.connection)
-        setRetryCount(0) // Reset retry count on success
+        const transformed = {
+          id: conn.id,
+          mentor_id: conn.mentor_id,
+          mentee_id: conn.mentee_id,
+          status: conn.status,
+          connection_message: conn.connection_message,
+          goals: conn.goals || [],
+          target_band_score: conn.target_band_score || 0,
+          focus_areas: conn.focus_areas || [],
+          mentor: idToProfile[conn.mentor_id] || null,
+          mentee: idToProfile[conn.mentee_id] || null,
+          created_at: conn.created_at,
+        } as any
+        setConnection(transformed)
+        setRetryCount(0)
       } else {
-        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
-        console.error('❌ Connection error:', errorData)
-        
-        // Retry logic
-        if (retryCount < maxRetries) {
-          console.log(`🔄 Retrying connection fetch (${retryCount + 1}/${maxRetries})`)
-          setRetryCount(prev => prev + 1)
-          setTimeout(() => fetchConnection(), 2000)
+        const token = localStorage.getItem('access_token')
+        if (!token) {
+          setError('No authentication token found. Please log in again.')
+          setLoading(false)
           return
         }
-        
-        setError(`Failed to load connection details: ${errorData.detail}`)
+        const response = await fetch(`/api/v1/mentorship/connections/${connectionId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setConnection(data.connection)
+          setRetryCount(0)
+        } else {
+          const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+          if (retryCount < maxRetries) {
+            setRetryCount(prev => prev + 1)
+            setTimeout(() => fetchConnection(), 2000)
+            return
+          }
+          setError(`Failed to load connection details: ${errorData.detail}`)
+        }
       }
     } catch (error) {
       console.error('❌ Error fetching connection:', error)
@@ -179,29 +203,33 @@ export default function ChatPage() {
 
   const fetchMessages = async () => {
     try {
+      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      if (useSupabase) {
+        const idNum = Number(connectionId)
+        const { data: msgs, error } = await supabase
+          .from('mentorship_messages')
+          .select('*')
+          .eq('connection_id', idNum)
+          .order('created_at', { ascending: true })
+        if (error) throw error
+        setMessages((msgs as any) || [])
+        return
+      }
+
       const token = localStorage.getItem('access_token')
       if (!token) {
         setError('No authentication token found. Please log in again.')
         setLoading(false)
         return
       }
-
-      // Use relative API path; Next.js rewrites will proxy to backend
-      console.log(`🔍 Fetching messages for connection ${connectionId}`)
-      
       const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-
-      console.log(`📡 Messages response: ${response.status}`)
-
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Messages data:', data)
         setMessages(data.messages || [])
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
-        console.error('❌ Messages error:', errorData)
         setError(`Failed to load messages: ${errorData.detail}`)
       }
     } catch (error) {
@@ -217,36 +245,55 @@ export default function ChatPage() {
 
     setSending(true)
     try {
+      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      if (useSupabase) {
+        const { data: sess } = await supabase.auth.getSession()
+        const uid = sess?.session?.user?.id
+        if (!uid) {
+          setError('Please sign in again.')
+          setSending(false)
+          return
+        }
+        const idNum = Number(connectionId)
+        const { data, error } = await supabase
+          .from('mentorship_messages')
+          .insert({
+            connection_id: idNum,
+            sender_id: uid,
+            message_type: 'text',
+            content: newMessage,
+          })
+          .select('*')
+          .single()
+        if (error) throw error
+        setMessages(prev => [...prev, data as any])
+        setNewMessage('')
+        return
+      }
+
       const token = localStorage.getItem('access_token')
       if (!token) {
         setError('No authentication token found. Please log in again.')
         setSending(false)
         return
       }
-
-      // Use relative API path; Next.js rewrites will proxy to backend
       const formData = new FormData()
       formData.append('content', newMessage)
       formData.append('message_type', 'text')
-
-      console.log(`📤 Sending message to connection ${connectionId}`)
       const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       })
-
       if (response.ok) {
         const data = await response.json()
         if (data.data) {
           setMessages(prev => [...prev, data.data])
         }
         setNewMessage('')
-        console.log('✅ Message sent successfully')
       } else {
         const errorData = await response.json()
         setError(`Failed to send message: ${errorData.detail}`)
-        console.error('❌ Send message error:', errorData)
       }
     } catch (error) {
       console.error('❌ Error sending message:', error)
