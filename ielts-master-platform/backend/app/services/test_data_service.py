@@ -9,8 +9,14 @@ logger = logging.getLogger(__name__)
 
 class TestDataService:
     def __init__(self):
-        # Path to the Archive test data
-        self.archive_path = Path("/Users/shan/Desktop/Work/Projects/EdPrep AI/ARCHIVE/test-data/IELTS")
+        # Path to the Archive test data - use relative path for deployment
+        if os.path.exists("/Users/shan/Desktop/Work/Projects/EdPrep AI/ARCHIVE/test-data/IELTS"):
+            # Local development
+            self.archive_path = Path("/Users/shan/Desktop/Work/Projects/EdPrep AI/ARCHIVE/test-data/IELTS")
+        else:
+            # Production deployment - use data directory
+            self.archive_path = Path("data")
+        
         self.cambridge_path = self.archive_path / "Cambridge IELTS"
         self.speaking_data_path = self.archive_path / "Speaking" / "data_speaking"
         self.writing_data_path = self.archive_path / "Writing" / "data_writing"
