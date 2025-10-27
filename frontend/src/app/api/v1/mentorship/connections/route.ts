@@ -9,6 +9,29 @@ function getCurrentUser(authHeader: string) {
   }
   
   const token = authHeader.split(' ')[1]
+  
+  // Handle guest mode
+  if (token === 'guest-token') {
+    return {
+      id: 'guest',
+      email: 'guest@edprep.ai',
+      username: 'guest',
+      full_name: 'Guest User',
+      role: 'guest',
+      is_active: true,
+      is_verified: true,
+      is_premium: false,
+      target_band_score: 7.0,
+      current_level: 'intermediate',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_login: null,
+      total_points: 0,
+      level: 1,
+      streak_days: 0
+    }
+  }
+  
   try {
     const payload = jwt.verify(token, 'secret-key') as any
     return users.find(u => u.id === parseInt(payload.sub))

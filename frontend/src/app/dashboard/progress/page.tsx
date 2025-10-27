@@ -67,7 +67,7 @@ export default function ProgressPage() {
         throw new Error('Authentication token not found')
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/user/progress`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/user/progress`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

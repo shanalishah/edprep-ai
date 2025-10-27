@@ -5,30 +5,40 @@ import { useAuth } from '../../providers'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
-  MicrophoneIcon,
+  ChatBubbleLeftRightIcon,
   ClockIcon,
+  StarIcon,
+  ChartBarIcon,
   PlayIcon,
+  BookOpenIcon,
+  AcademicCapIcon,
+  TrophyIcon,
   ArrowLeftIcon,
-  CheckCircleIcon,
-  XCircleIcon
+  EyeIcon,
+  SparklesIcon,
+  MicrophoneIcon,
+  CpuChipIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 
 interface SpeakingTest {
   id: string
   title: string
+  type: 'Academic' | 'General Training'
+  difficulty: 'Easy' | 'Medium' | 'Hard'
+  estimated_time: string
   description: string
-  duration: string
-  difficulty: string
-  parts: number
-  completed: boolean
-  score?: number
+  topics: string[]
 }
 
-export default function SpeakingTestPage() {
+export default function SpeakingTestsPage() {
   const { isAuthenticated, loading: authLoading } = useAuth()
   const router = useRouter()
-  const [selectedTest, setSelectedTest] = useState<SpeakingTest | null>(null)
+  const [tests, setTests] = useState<SpeakingTest[]>([])
+  const [filter, setFilter] = useState<'all' | 'Academic' | 'General Training'>('all')
+  const [difficulty, setDifficulty] = useState<'all' | 'Easy' | 'Medium' | 'Hard'>('all')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -36,60 +46,106 @@ export default function SpeakingTestPage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  const speakingTests: SpeakingTest[] = [
-    {
-      id: 'speaking-1',
-      title: 'IELTS Speaking Test 1',
-      description: 'Practice speaking about familiar topics and personal experiences',
-      duration: '11-14 minutes',
-      difficulty: 'Intermediate',
-      parts: 3,
-      completed: false
-    },
-    {
-      id: 'speaking-2',
-      title: 'IELTS Speaking Test 2',
-      description: 'Practice describing objects, places, and events in detail',
-      duration: '11-14 minutes',
-      difficulty: 'Beginner',
-      parts: 3,
-      completed: true,
-      score: 6.5
-    },
-    {
-      id: 'speaking-3',
-      title: 'IELTS Speaking Test 3',
-      description: 'Practice discussing abstract topics and expressing opinions',
-      duration: '11-14 minutes',
-      difficulty: 'Advanced',
-      parts: 3,
-      completed: false
-    },
-    {
-      id: 'speaking-4',
-      title: 'IELTS Speaking Test 4',
-      description: 'Practice speaking about work, studies, and future plans',
-      duration: '11-14 minutes',
-      difficulty: 'Intermediate',
-      parts: 3,
-      completed: true,
-      score: 7.0
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadSpeakingTests()
     }
-  ]
+  }, [isAuthenticated])
 
-  const handleStartTest = (test: SpeakingTest) => {
-    setSelectedTest(test)
-    // In a real app, this would start the actual test
-    console.log('Starting test:', test.title)
+  const loadSpeakingTests = async () => {
+    try {
+      const token = localStorage.getItem('access_token')
+      if (!token) return
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/test-library/speaking`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const apiTests = await response.json()
+        setTests(apiTests)
+      } else {
+        // Fallback to mock data if API fails
+        const mockTests: SpeakingTest[] = [
+          {
+            id: "speaking_mock_1",
+            title: "General Topics Speaking Test",
+            type: "General Training",
+            difficulty: "Easy",
+            estimated_time: "11-14 minutes",
+            description: "Practice speaking on familiar topics with AI examiner",
+            topics: ["Personal Information", "Hobbies", "Travel", "Food", "Technology"]
+          },
+          {
+            id: "speaking_mock_2",
+            title: "Academic Discussion Test",
+            type: "Academic",
+            difficulty: "Medium",
+            estimated_time: "11-14 minutes",
+            description: "Advanced speaking practice with complex topics",
+            topics: ["Education", "Environment", "Technology", "Society", "Culture"]
+          },
+          {
+            id: "speaking_mock_3",
+            title: "Professional Communication Test",
+            type: "General Training",
+            difficulty: "Hard",
+            estimated_time: "11-14 minutes",
+            description: "Business and professional speaking scenarios",
+            topics: ["Work", "Leadership", "Communication", "Problem Solving", "Innovation"]
+          }
+        ]
+        setTests(mockTests)
+      }
+    } catch (error) {
+      console.error('Error loading speaking tests:', error)
+      // Fallback to mock data
+      const mockTests: SpeakingTest[] = [
+        {
+          id: "speaking_mock_1",
+          title: "General Topics Speaking Test",
+          type: "General Training",
+          difficulty: "Easy",
+          estimated_time: "11-14 minutes",
+          description: "Practice speaking on familiar topics with AI examiner",
+          topics: ["Personal Information", "Hobbies", "Travel", "Food", "Technology"]
+        }
+      ]
+      setTests(mockTests)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  if (authLoading) {
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Easy': return 'bg-green-100 text-green-800'
+      case 'Medium': return 'bg-yellow-100 text-yellow-800'
+      case 'Hard': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'Academic': return 'bg-blue-100 text-blue-800'
+      case 'General Training': return 'bg-purple-100 text-purple-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const filteredTests = tests.filter(test => {
+    const matchesFilter = filter === 'all' || test.type === filter
+    const matchesDifficulty = difficulty === 'all' || test.difficulty === difficulty
+    return matchesFilter && matchesDifficulty
+  })
+
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -102,157 +158,269 @@ export default function SpeakingTestPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
             <div className="flex items-center">
-              <Link 
-                href="/test-library"
-                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <ArrowLeftIcon className="h-5 w-5 mr-2" />
-                Back to Test Library
+              <Link href="/test-library" className="mr-4 p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                <ArrowLeftIcon className="h-6 w-6" />
               </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Speaking Tests</h1>
+                <p className="text-gray-600">AI-Powered IELTS Speaking Practice</p>
+              </div>
             </div>
-            <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <MicrophoneIcon className="h-8 w-8 mr-3 text-purple-600" />
-                IELTS Speaking Tests
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Practice speaking with AI-powered feedback and improve your fluency
-              </p>
+            <div className="flex items-center space-x-2">
+              <CpuChipIcon className="h-8 w-8 text-blue-600" />
+              <span className="text-sm font-medium text-gray-700">AI Examiner</span>
             </div>
-            <div className="w-32"></div> {/* Spacer for centering */}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* Test Grid */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <ChatBubbleLeftRightIcon className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Tests</p>
+                <p className="text-2xl font-bold text-gray-900">{tests.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <MicrophoneIcon className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">AI Examiner</p>
+                <p className="text-2xl font-bold text-gray-900">Active</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <ClockIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Test Duration</p>
+                <p className="text-2xl font-bold text-gray-900">11-14 min</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <SparklesIcon className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">AI Features</p>
+                <p className="text-2xl font-bold text-gray-900">Advanced</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Features Banner */}
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg p-6 mb-8 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold mb-2">🤖 AI-Powered Speaking Tests</h2>
+              <p className="text-blue-100">
+                Practice with our intelligent AI examiner that conducts realistic IELTS speaking tests, 
+                provides instant feedback, and scores your performance across all criteria.
+              </p>
+            </div>
+            <div className="hidden md:block">
+              <CpuChipIcon className="h-16 w-16 text-blue-200" />
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter Tests</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Test Type</label>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value as any)}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Types</option>
+                <option value="Academic">Academic</option>
+                <option value="General Training">General Training</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+              <select
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value as any)}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Levels</option>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Bot Test Card */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center mb-2">
+                  <ChatBubbleLeftRightIcon className="h-6 w-6 mr-2" />
+                  <h3 className="text-xl font-bold">AI Speaking Test Bot</h3>
+                </div>
+                <p className="text-blue-100 mb-4">
+                  Experience a realistic IELTS speaking test with our AI examiner bot. 
+                  Have a natural voice-to-voice conversation and receive comprehensive feedback.
+                </p>
+                <div className="flex items-center space-x-4 text-sm text-blue-100">
+                  <div className="flex items-center">
+                    <MicrophoneIcon className="h-4 w-4 mr-1" />
+                    Voice-to-voice conversation
+                  </div>
+                  <div className="flex items-center">
+                    <ClockIcon className="h-4 w-4 mr-1" />
+                    11-14 minutes
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                    Real-time assessment
+                  </div>
+                </div>
+              </div>
+              <div className="ml-6">
+                <Link href="/test-library/speaking/ai-bot">
+                  <button className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center">
+                    <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
+                    Try AI Bot
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tests Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {speakingTests.map((test, index) => (
+          {filteredTests.map((test, index) => (
             <motion.div
               key={test.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow"
+              className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:border-blue-300 transition-all duration-200"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <MicrophoneIcon className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-lg font-semibold text-gray-900">{test.title}</h3>
-                    <p className="text-sm text-gray-500">{test.difficulty}</p>
-                  </div>
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(test.type)}`}>
+                    {test.type}
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(test.difficulty)}`}>
+                    {test.difficulty}
+                  </span>
                 </div>
-                {test.completed && (
-                  <div className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-1" />
-                    <span className="text-sm font-medium text-green-600">{test.score}</span>
-                  </div>
-                )}
+                <div className="flex items-center text-blue-600">
+                  <CpuChipIcon className="h-5 w-5 mr-1" />
+                  <span className="text-sm font-semibold">AI</span>
+                </div>
               </div>
 
-              <p className="text-gray-600 mb-4">{test.description}</p>
+              {/* Title and Description */}
+              <h3 className="text-lg font-bold text-gray-900 mb-2">{test.title}</h3>
+              <p className="text-gray-600 text-sm mb-4">{test.description}</p>
 
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                <div className="flex items-center">
-                  <ClockIcon className="h-4 w-4 mr-1" />
-                  {test.duration}
+              {/* Topic */}
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Topic Covered:</h4>
+                <div className="flex flex-wrap gap-1">
+                  <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                    {test.topics?.[0] || 'General Topics'}
+                  </span>
                 </div>
-                <div>{test.parts} parts</div>
               </div>
 
-              <button
-                onClick={() => handleStartTest(test)}
-                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center"
-              >
-                <PlayIcon className="h-5 w-5 mr-2" />
-                {test.completed ? 'Retake Test' : 'Start Test'}
-              </button>
+              {/* Test Info */}
+              <div className="space-y-2 text-sm text-gray-500 mb-4">
+                <div className="flex items-center justify-between">
+                  <span>Duration:</span>
+                  <span className="font-semibold">{test.estimated_time}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Format:</span>
+                  <span className="font-semibold">3 Parts</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Assessment:</span>
+                  <span className="font-semibold text-blue-600">AI-Powered</span>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <Link href={`/test-library/speaking/${test.id}`}>
+                <button className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center">
+                  <PlayIcon className="h-5 w-5 mr-2" />
+                  Start AI Speaking Test
+                </button>
+              </Link>
             </motion.div>
           ))}
         </div>
 
-        {/* Test Instructions */}
-        <div className="mt-12 bg-white rounded-xl shadow-sm p-8 border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Test Instructions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Before You Start</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-start">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  Ensure your microphone is working properly
-                </li>
-                <li className="flex items-start">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  Find a quiet environment with no background noise
-                </li>
-                <li className="flex items-start">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  Have a pen and paper ready for Part 2 notes
-                </li>
-                <li className="flex items-start">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  Relax and speak naturally - it's a conversation
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">During the Test</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-start">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  Listen carefully to the examiner's questions
-                </li>
-                <li className="flex items-start">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  Give detailed answers - don't just say yes or no
-                </li>
-                <li className="flex items-start">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  Use the 1-minute preparation time in Part 2 wisely
-                </li>
-                <li className="flex items-start">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  Express your opinions clearly in Part 3
-                </li>
-              </ul>
-            </div>
+        {/* Empty State */}
+        {filteredTests.length === 0 && (
+          <div className="text-center py-12">
+            <ChatBubbleLeftRightIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No speaking tests found</h3>
+            <p className="text-gray-600">Try adjusting your filters to see more tests.</p>
           </div>
-        </div>
+        )}
 
-        {/* Speaking Test Structure */}
-        <div className="mt-8 bg-white rounded-xl shadow-sm p-8 border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Speaking Test Structure</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* AI Features Info */}
+        <div className="mt-12 bg-white rounded-xl shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">🤖 AI Speaking Test Features</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="p-4 bg-blue-100 rounded-lg mb-4">
-                <span className="text-2xl font-bold text-blue-600">Part 1</span>
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MicrophoneIcon className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Introduction & Interview</h3>
-              <p className="text-gray-600 text-sm">4-5 minutes</p>
-              <p className="text-gray-600 text-sm mt-2">Questions about yourself, home, work, studies, and interests</p>
+              <h3 className="font-semibold text-gray-900 mb-2">Voice Recognition</h3>
+              <p className="text-sm text-gray-600">Advanced speech-to-text technology for accurate transcription</p>
             </div>
             <div className="text-center">
-              <div className="p-4 bg-green-100 rounded-lg mb-4">
-                <span className="text-2xl font-bold text-green-600">Part 2</span>
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ChatBubbleLeftRightIcon className="h-6 w-6 text-green-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Individual Long Turn</h3>
-              <p className="text-gray-600 text-sm">3-4 minutes</p>
-              <p className="text-gray-600 text-sm mt-2">Speak for 1-2 minutes on a given topic with 1 minute preparation</p>
+              <h3 className="font-semibold text-gray-900 mb-2">Real-time Feedback</h3>
+              <p className="text-sm text-gray-600">Instant AI feedback and suggestions during the test</p>
             </div>
             <div className="text-center">
-              <div className="p-4 bg-purple-100 rounded-lg mb-4">
-                <span className="text-2xl font-bold text-purple-600">Part 3</span>
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ChartBarIcon className="h-6 w-6 text-purple-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Two-way Discussion</h3>
-              <p className="text-gray-600 text-sm">4-5 minutes</p>
-              <p className="text-gray-600 text-sm mt-2">Abstract discussion related to the topic in Part 2</p>
+              <h3 className="font-semibold text-gray-900 mb-2">Comprehensive Scoring</h3>
+              <p className="text-sm text-gray-600">Detailed assessment across all IELTS speaking criteria</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CpuChipIcon className="h-6 w-6 text-yellow-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">AI Examiner</h3>
+              <p className="text-sm text-gray-600">Intelligent conversation flow with natural follow-up questions</p>
             </div>
           </div>
         </div>
@@ -260,9 +428,3 @@ export default function SpeakingTestPage() {
     </div>
   )
 }
-
-
-
-
-
-

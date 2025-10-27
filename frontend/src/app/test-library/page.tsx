@@ -53,8 +53,35 @@ export default function TestLibraryPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchUserStats()
+      fetchTestStats()
     }
   }, [isAuthenticated])
+
+  const fetchTestStats = async () => {
+    try {
+      const token = localStorage.getItem('access_token')
+      if (!token) return
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/test-library/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setTestStats({
+          listening_tests: data.listening_tests || 0,
+          reading_tests: data.reading_tests || 0,
+          writing_tests: data.writing_tests || 0,
+          speaking_tests: data.speaking_tests || 0,
+          total_tests: data.total_tests || 0
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching test stats:', error)
+    }
+  }
 
   const fetchUserStats = async () => {
     try {
@@ -81,6 +108,14 @@ export default function TestLibraryPage() {
     }
   }
 
+  const [testStats, setTestStats] = useState({
+    listening_tests: 0,
+    reading_tests: 0,
+    writing_tests: 0,
+    speaking_tests: 0,
+    total_tests: 0
+  })
+
   const testCategories: TestCategory[] = [
     {
       id: 'listening',
@@ -88,7 +123,7 @@ export default function TestLibraryPage() {
       description: 'Practice with real audio recordings and improve your listening skills with authentic IELTS listening tests.',
       icon: <SpeakerWaveIcon className="h-8 w-8" />,
       color: 'bg-gradient-to-br from-blue-500 to-blue-600',
-      testCount: 25,
+      testCount: testStats.listening_tests,
       difficulty: 'Mixed',
       estimatedTime: '30-40 min',
       href: '/test-library/listening'
@@ -99,7 +134,7 @@ export default function TestLibraryPage() {
       description: 'Practice with authentic reading passages and improve your comprehension skills with real IELTS reading tests.',
       icon: <EyeIcon className="h-8 w-8" />,
       color: 'bg-gradient-to-br from-green-500 to-green-600',
-      testCount: 30,
+      testCount: testStats.reading_tests,
       difficulty: 'Mixed',
       estimatedTime: '60 min',
       href: '/test-library/reading'
@@ -110,7 +145,7 @@ export default function TestLibraryPage() {
       description: 'Get AI-powered feedback on your essays and improve your writing skills with comprehensive writing assessments.',
       icon: <PencilIcon className="h-8 w-8" />,
       color: 'bg-gradient-to-br from-purple-500 to-purple-600',
-      testCount: 20,
+      testCount: testStats.writing_tests,
       difficulty: 'Mixed',
       estimatedTime: '60 min',
       href: '/test-library/writing'
@@ -121,7 +156,7 @@ export default function TestLibraryPage() {
       description: 'Practice speaking with AI-powered feedback and improve your fluency with realistic speaking assessments.',
       icon: <MicrophoneIcon className="h-8 w-8" />,
       color: 'bg-gradient-to-br from-orange-500 to-orange-600',
-      testCount: 15,
+      testCount: testStats.speaking_tests,
       difficulty: 'Mixed',
       estimatedTime: '15-20 min',
       href: '/test-library/speaking'
@@ -185,7 +220,7 @@ export default function TestLibraryPage() {
                   Test Library
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  100+ FREE IELTS practice tests with AI-powered feedback
+                  {testStats.total_tests}+ FREE IELTS practice tests with AI-powered feedback
                 </p>
               </div>
             </div>

@@ -86,8 +86,22 @@ def _first_prompt_for_role(role: Role) -> str:
 
 @router.post("/start", response_model=StartSessionResponse)
 async def start_session(payload: StartSessionRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Allow guest users to start sessions for testing
     if current_user.get("isGuest", False):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Guests cannot start teaching sessions")
+        # For guest users, use in-memory storage instead of database
+        session_id = f"guest_session_{len(_SESSIONS) + 1}"
+        session = Session(
+            id=session_id,
+            role=payload.role,
+            task_type=payload.task_type,
+            goal=payload.goal,
+            status="active",
+            turns=[],
+            latest_draft=DraftVersion()
+        )
+        _SESSIONS[session_id] = session
+        first_prompt = _first_prompt_for_role(payload.role)
+        return StartSessionResponse(session=session, first_prompt=first_prompt)
 
     # Persist session
     db_session = TeachingSessionModel(
@@ -119,13 +133,21 @@ async def start_session(payload: StartSessionRequest, current_user: dict = Depen
 
 @router.post("/{session_id}/step", response_model=StepResponse)
 async def step_session(session_id: str, payload: StepRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_session = db.query(TeachingSessionModel).filter(TeachingSessionModel.id == int(session_id)).first()
-    if not db_session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    # Handle guest sessions
+    if current_user.get("isGuest", False):
+        if session_id not in _SESSIONS:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+        session = _SESSIONS[session_id]
+        role = session.role
+    else:
+        # Handle authenticated users
+        db_session = db.query(TeachingSessionModel).filter(TeachingSessionModel.id == int(session_id)).first()
+        if not db_session:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+        role = db_session.role
 
     # Generate the next tutor message
     user_input = payload.user_input or ""
-    role = db_session.role
 
     agent_output: str | None = None
 
@@ -180,7 +202,10 @@ Keep responses under 3 sentences. Always end with a specific improvement task.""
                 enhanced_guidance = ""
 
             # Provide minimal context (last draft snapshot + latest user input)
-            context = (db_session.latest_draft_content or "").strip()
+            if current_user.get("isGuest", False):
+                context = (session.latest_draft.content or "").strip()
+            else:
+                context = (db_session.latest_draft_content or "").strip()
             context = context[-1500:] if context else ""
 
             # Compose enhanced prompt with writing guidance context
@@ -253,23 +278,47 @@ Keep responses under 3 sentences. Always end with a specific improvement task.""
             agent_output = "Your introduction needs more specificity. Rewrite it using this structure: 'In [context], [topic] has [impact]. While [opposing view], I believe [position] because [reasons].'" + fallback_guidance
 
     # Update draft version if provided
-    draft_version = DraftVersion(content=db_session.latest_draft_content or "", version=db_session.latest_draft_version)
-    if payload.draft_delta:
-        new_content = ((db_session.latest_draft_content or "") + "\n\n" + payload.draft_delta).strip()
-        new_version = (db_session.latest_draft_version or 0) + 1
-        db.add(DraftVersionModel(session_id=db_session.id, version=new_version, content=new_content))
-        db_session.latest_draft_content = new_content
-        db_session.latest_draft_version = new_version
+    if current_user.get("isGuest", False):
+        # Handle guest sessions
+        draft_version = DraftVersion(content=session.latest_draft.content or "", version=session.latest_draft.version)
+        if payload.draft_delta:
+            new_content = ((session.latest_draft.content or "") + "\n\n" + payload.draft_delta).strip()
+            new_version = (session.latest_draft.version or 0) + 1
+            session.latest_draft.content = new_content
+            session.latest_draft.version = new_version
+            draft_version = DraftVersion(content=new_content, version=new_version)
+        
+        # Add turn to guest session
+        turn = Turn(role=role, user_input=user_input, agent_output=agent_output)
+        session.turns.append(turn)
+        
+        return StepResponse(turn=turn, draft_version=draft_version, next_action="continue")
+    else:
+        # Handle authenticated users
+        draft_version = DraftVersion(content=db_session.latest_draft_content or "", version=db_session.latest_draft_version)
+        if payload.draft_delta:
+            new_content = ((db_session.latest_draft_content or "") + "\n\n" + payload.draft_delta).strip()
+            new_version = (db_session.latest_draft_version or 0) + 1
+            db.add(DraftVersionModel(session_id=db_session.id, version=new_version, content=new_content))
+            db_session.latest_draft_content = new_content
+            db_session.latest_draft_version = new_version
 
-    db.add(TeachingTurnModel(session_id=db_session.id, role=role, user_input=user_input, agent_output=agent_output))
-    db.commit()
+        db.add(TeachingTurnModel(session_id=db_session.id, role=role, user_input=user_input, agent_output=agent_output))
+        db.commit()
 
-    turn = Turn(role=role, user_input=user_input, agent_output=agent_output)
-    return StepResponse(turn=turn, draft_version=DraftVersion(content=db_session.latest_draft_content or "", version=db_session.latest_draft_version or 0), next_action="continue")
+        turn = Turn(role=role, user_input=user_input, agent_output=agent_output)
+        return StepResponse(turn=turn, draft_version=DraftVersion(content=db_session.latest_draft_content or "", version=db_session.latest_draft_version or 0), next_action="continue")
 
 
 @router.get("/{session_id}", response_model=Session)
 async def get_session(session_id: str, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Handle guest sessions
+    if current_user.get("isGuest", False):
+        if session_id not in _SESSIONS:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+        return _SESSIONS[session_id]
+    
+    # Handle authenticated users
     db_session = db.query(TeachingSessionModel).filter(TeachingSessionModel.id == int(session_id)).first()
     if not db_session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
@@ -291,6 +340,13 @@ class ListSessionsResponse(BaseModel):
 
 @router.get("/", response_model=ListSessionsResponse)
 async def list_sessions(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Handle guest users
+    if current_user.get("isGuest", False):
+        # Return guest sessions from in-memory storage
+        guest_sessions = [session for session_id, session in _SESSIONS.items() if session_id.startswith("guest_session")]
+        return ListSessionsResponse(sessions=guest_sessions)
+    
+    # Handle authenticated users
     rows = db.query(TeachingSessionModel).filter(TeachingSessionModel.user_id == int(current_user["user_id"]))\
         .order_by(TeachingSessionModel.created_at.desc()).all()
     sessions: List[Session] = []

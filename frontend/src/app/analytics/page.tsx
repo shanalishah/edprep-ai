@@ -69,7 +69,7 @@ export default function AnalyticsPage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/user/progress`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/user/progress`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

@@ -160,30 +160,7 @@ export default function HomePage() {
     }
   ]
 
-  const stats = [
-    { number: "100+", label: "Practice Tests" },
-    { number: "28M+", label: "Test Takers" },
-    { number: "120+", label: "Countries" },
-    { number: "7M+", label: "Completed Tests" }
-  ]
 
-  const testimonials = [
-    {
-      name: "Sarah Johnson",
-      score: "Band 8.0",
-      text: "EdPrep AI helped me achieve my target score in just 3 months. The AI feedback was incredibly detailed and helpful."
-    },
-    {
-      name: "Ahmed Hassan",
-      score: "Band 7.5",
-      text: "The practice tests are so realistic! I felt completely prepared for my actual IELTS exam."
-    },
-    {
-      name: "Maria Rodriguez",
-      score: "Band 8.5",
-      text: "The personalized learning approach made all the difference. I improved by 1.5 bands!"
-    }
-  ]
 
   return (
     <div className="min-h-screen bg-white">
@@ -451,80 +428,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Trusted by Millions Worldwide
-            </h2>
-            <p className="text-xl text-white/90">
-              Join the global community of successful IELTS candidates
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="text-center"
-              >
-                <div className="text-4xl md:text-5xl font-bold text-white mb-2">{stat.number}</div>
-                <div className="text-white/90">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              What Our Students Say
-            </h2>
-            <p className="text-xl text-gray-600">
-              Real success stories from IELTS candidates who achieved their target scores
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="bg-white rounded-xl shadow-lg p-6"
-              >
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-lg">
-                      {testimonial.name.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
-                    <p className="text-blue-600 font-semibold">{testimonial.score}</p>
-                  </div>
-                </div>
-                <p className="text-gray-600 italic">"{testimonial.text}"</p>
-                <div className="flex mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <StarIcon key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section */}
       <section className="py-20 bg-white">

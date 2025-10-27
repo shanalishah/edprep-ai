@@ -48,3 +48,5 @@ ielts-master-platform/
 - **Fast Performance**: Removed unnecessary files and dependencies
 - **Modern Stack**: Next.js 14 + FastAPI + TypeScript
 - **Production Ready**: Optimized for Vercel + Railway deployment
+
+

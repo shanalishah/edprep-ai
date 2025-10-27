@@ -20,7 +20,7 @@ import {
 import Link from 'next/link'
 
 interface WritingTest {
-  id: number
+  id: string
   title: string
   taskType: 'Task 1' | 'Task 2'
   topic: string
@@ -55,86 +55,73 @@ export default function WritingTestsPage() {
   }, [isAuthenticated])
 
   const loadWritingTests = async () => {
-    // Mock data - in real implementation, this would come from API
-    const mockTests: WritingTest[] = [
-      {
-        id: 1,
-        title: "Technology and Communication",
-        taskType: "Task 2",
-        topic: "Technology",
-        difficulty: "Medium",
-        estimatedTime: "40 min",
-        wordCount: 250,
-        description: "Discuss the impact of technology on modern communication",
-        prompt: "Some people believe that technology has made our lives more complicated, while others think it has made life easier. Discuss both views and give your opinion.",
-        completed: false
-      },
-      {
-        id: 2,
-        title: "Education and Experience",
-        taskType: "Task 2",
-        topic: "Education",
-        difficulty: "Easy",
-        estimatedTime: "35 min",
-        wordCount: 250,
-        description: "Compare the importance of education vs experience",
-        prompt: "Some people think that formal education is more important than practical experience. Others believe that practical experience is more valuable. Discuss both views and give your opinion.",
-        completed: true,
-        bandScore: 7.5
-      },
-      {
-        id: 3,
-        title: "Environmental Protection",
-        taskType: "Task 2",
-        topic: "Environment",
-        difficulty: "Hard",
-        estimatedTime: "45 min",
-        wordCount: 250,
-        description: "Analyze environmental challenges and solutions",
-        prompt: "Environmental problems are becoming increasingly serious. What are the main causes of these problems? What measures can be taken to address them?",
-        completed: false
-      },
-      {
-        id: 4,
-        title: "Bar Chart - Energy Consumption",
-        taskType: "Task 1",
-        topic: "Data Analysis",
-        difficulty: "Medium",
-        estimatedTime: "20 min",
-        wordCount: 150,
-        description: "Describe energy consumption patterns in different countries",
-        prompt: "The chart below shows the energy consumption in different countries from 2000 to 2010. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.",
-        completed: false
-      },
-      {
-        id: 5,
-        title: "Work-Life Balance",
-        taskType: "Task 2",
-        topic: "Work",
-        difficulty: "Medium",
-        estimatedTime: "40 min",
-        wordCount: 250,
-        description: "Discuss modern work-life balance challenges",
-        prompt: "In many countries, people are working longer hours than ever before. What are the causes of this trend? What effects does it have on individuals and society?",
-        completed: true,
-        bandScore: 6.5
-      },
-      {
-        id: 6,
-        title: "Line Graph - Population Growth",
-        taskType: "Task 1",
-        topic: "Data Analysis",
-        difficulty: "Easy",
-        estimatedTime: "20 min",
-        wordCount: 150,
-        description: "Describe population growth trends over time",
-        prompt: "The line graph below shows the population growth in three different cities from 1990 to 2010. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.",
-        completed: false
+    try {
+      const token = localStorage.getItem('access_token')
+      if (!token) return
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/test-library/writing`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const apiTests = await response.json()
+        
+        // Transform API data to match our interface
+        const transformedTests: WritingTest[] = apiTests.map((test: any) => ({
+          id: test.id, // Use the original API test ID
+          title: test.title,
+          taskType: test.task_type as 'Task 1' | 'Task 2',
+          topic: test.type || 'General',
+          difficulty: test.difficulty as 'Easy' | 'Medium' | 'Hard',
+          estimatedTime: test.estimated_time,
+          wordCount: typeof test.word_count === 'string' ? parseInt(test.word_count.split('-')[0]) : test.word_count,
+          description: test.description,
+          prompt: test.prompt,
+          completed: false, // TODO: Track completion status
+          bandScore: undefined
+        }))
+        
+        setTests(transformedTests)
+      } else {
+        // Fallback to mock data if API fails
+        const mockTests: WritingTest[] = [
+          {
+            id: "writing_mock_1",
+            title: "Technology and Communication",
+            taskType: "Task 2",
+            topic: "Technology",
+            difficulty: "Medium",
+            estimatedTime: "40 min",
+            wordCount: 250,
+            description: "Discuss the impact of technology on modern communication",
+            prompt: "Some people believe that technology has made our lives more complicated, while others think it has made life easier. Discuss both views and give your opinion.",
+            completed: false
+          },
+          {
+            id: "writing_mock_2",
+            title: "Education and Experience",
+            taskType: "Task 2",
+            topic: "Education",
+            difficulty: "Easy",
+            estimatedTime: "35 min",
+            wordCount: 250,
+            description: "Compare the importance of education vs experience",
+            prompt: "Some people think that formal education is more important than practical experience. Others believe that practical experience is more valuable. Discuss both views and give your opinion.",
+            completed: true,
+            bandScore: 7.5
+          }
+        ]
+        setTests(mockTests)
       }
-    ]
-    
-    setTests(mockTests)
-    setLoading(false)
+    } catch (error) {
+      console.error('Error loading writing tests:', error)
+      // Fallback to empty array
+      setTests([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filteredTests = tests.filter(test => {

@@ -34,6 +34,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isGuestMode, setIsGuestMode] = useState(false)
   const router = useRouter()
   const { login } = useAuth()
 
@@ -72,15 +73,17 @@ export default function LoginPage() {
           role: profile?.role || 'student'
         })
         toast.success('Welcome back!')
-        router.push('/dashboard')
+        router.push('/dashboard/home')
       } else {
         // Use Railway backend for authentication
         console.log('🚀 Using Railway backend for authentication') // Debug log
         const formData = new URLSearchParams()
-        formData.append('username', data.email)
+        // Extract username from email (e.g., admin1@edprep.ai -> admin1)
+        const username = data.email.split('@')[0]
+        formData.append('username', username)
         formData.append('password', data.password)
         const apiUrl = getApiUrl(API_CONFIG.ENDPOINTS.AUTH_LOGIN, true)
-        console.log('🚀 Sending login request to Railway backend:', { email: data.email, password: '***', apiUrl }) // Debug log
+        console.log('🚀 Sending login request to Railway backend:', { email: data.email, username: username, password: '***', apiUrl }) // Debug log
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -94,12 +97,52 @@ export default function LoginPage() {
         const result = await response.json()
         login(result.access_token, result.user)
         toast.success('Welcome back!')
-        router.push('/dashboard')
+        router.push('/dashboard/home')
       }
       
     } catch (error: any) {
       console.error('Login error:', error) // Debug log
       toast.error(error.message || 'Login failed. Please check your credentials.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleGuestMode = async () => {
+    setIsLoading(true)
+    try {
+      // Create a guest user session
+      const guestUser = {
+        id: 'guest',
+        email: 'guest@edprep.ai',
+        username: 'guest',
+        full_name: 'Guest User',
+        role: 'guest',
+        is_active: true,
+        is_verified: true,
+        is_premium: false,
+        target_band_score: 7.0,
+        current_level: 'intermediate',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_login: null,
+        total_points: 0,
+        level: 1,
+        streak_days: 0
+      }
+
+      // Store guest session in localStorage
+      localStorage.setItem('access_token', 'guest-token')
+      localStorage.setItem('user', JSON.stringify(guestUser))
+      
+      // Update auth context
+      login('guest-token', guestUser)
+      
+      toast.success('Welcome! You\'re now in guest mode')
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Guest mode error:', error)
+      toast.error('Failed to enter guest mode')
     } finally {
       setIsLoading(false)
     }
@@ -299,6 +342,31 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
+
+            {/* Guest Mode Button */}
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleGuestMode}
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-gray-200/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                    <span className="text-lg">Loading...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <UserIcon className="mr-2 h-5 w-5" />
+                    <span className="text-lg">Continue as Guest</span>
+                  </div>
+                )}
+              </button>
+              <p className="text-center text-sm text-gray-500 mt-2">
+                Explore the app without creating an account
+              </p>
+            </div>
 
             {/* Divider */}
             <div className="mt-6">

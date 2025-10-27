@@ -78,7 +78,7 @@ export default function WritePage() {
         throw new Error('Authentication token not found. Please log in again.')
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
       const response = await fetch(`${apiUrl}/api/v1/essays/assess`, {
         method: 'POST',
         headers: {

@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAuthenticated(true);
     setUser(userData);
     console.log('Set authentication state, redirecting to dashboard');
-    router.push('/dashboard');
+    router.push('/dashboard/home');
   };
 
   const logout = () => {

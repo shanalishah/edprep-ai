@@ -35,6 +35,7 @@ export default function DashboardHomePage() {
     level: 1,
     totalPoints: 0
   })
+  const [recentActivities, setRecentActivities] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -55,7 +56,7 @@ export default function DashboardHomePage() {
       const token = localStorage.getItem('access_token')
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/user/progress`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/progress/overview`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -67,10 +68,19 @@ export default function DashboardHomePage() {
           essaysWritten: data.progress.essays_written || 0,
           averageScore: data.progress.average_score || 0,
           bestScore: data.progress.best_score || 0,
-          streakDays: data.user_stats.streak_days || 0,
-          level: data.user_stats.level || 1,
-          totalPoints: data.user_stats.total_points || 0
+          streakDays: data.analytics?.streak_days?.value || 0,
+          level: Math.floor((data.progress.average_score || 0) / 2) + 1, // Calculate level from average score
+          totalPoints: data.achievements?.reduce((total, achievement) => total + achievement.points, 0) || 0
         })
+        
+        // Map recent sessions to activities
+        const activities = (data.recent_sessions || []).slice(0, 3).map(session => ({
+          type: session.type,
+          title: `${session.type.charAt(0).toUpperCase() + session.type.slice(1)} Practice`,
+          score: session.efficiency_score ? Math.round(session.efficiency_score * 10) / 10 : null,
+          date: new Date(session.started_at).toLocaleDateString()
+        }))
+        setRecentActivities(activities)
       }
     } catch (error) {
       console.error('Error fetching progress:', error)
@@ -134,11 +144,6 @@ export default function DashboardHomePage() {
     }
   ]
 
-  const recentActivities = [
-    { type: 'essay', title: 'Technology Impact Essay', score: 7.5, date: '2 hours ago' },
-    { type: 'practice', title: 'Task 1 Practice', score: 6.5, date: '1 day ago' },
-    { type: 'feedback', title: 'Grammar Review', score: null, date: '2 days ago' }
-  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">

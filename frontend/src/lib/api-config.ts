@@ -1,7 +1,7 @@
 // API Configuration for production deployment
 export const API_CONFIG = {
-  // Railway backend URL
-  BACKEND_URL: 'https://web-production-4d7f.up.railway.app',
+  // Railway backend URL (use local for testing)
+  BACKEND_URL: process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://web-production-4d7f.up.railway.app',
   
   // Frontend URL (Vercel)
   FRONTEND_URL: 'https://ielts-master-platform-qrzlodk8y-shan-ali-shah-sayeds-projects.vercel.app',

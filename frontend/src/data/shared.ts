@@ -115,7 +115,7 @@ export const users = [
     level: 1,
     streak_days: 0
   }
-]
+];
 
 export const mentors = [
   {

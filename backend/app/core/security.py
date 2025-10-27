@@ -183,7 +183,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     token = credentials.credentials
     
     # Handle guest tokens
-    if token.startswith('guest_'):
+    if token.startswith('guest_') or token == 'guest-token':
         return {"user_id": "guest", "token": token, "isGuest": True}
     
     user_id = verify_token(token)
