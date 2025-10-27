@@ -17,6 +17,14 @@ python-multipart==0.0.20
 openai==1.35.13
 anthropic==0.29.0
 
+# ML & Data Science
+scikit-learn==1.7.2
+numpy==2.3.3
+pandas==2.3.2
+nltk==3.8.1
+joblib==1.5.2
+
 # Utilities
 python-dotenv==1.1.1
 httpx==0.25.2
+pypdf==4.3.1
