@@ -56,8 +56,65 @@ export const users = [
     total_points: 0,
     level: 1,
     streak_days: 0
+  },
+  // Mentor users for authentication
+  {
+    id: 10,
+    email: 'mentor1@edprep.ai',
+    username: 'mentor1',
+    full_name: 'Mentor One',
+    password: '$2b$10$LgA4KTs01JITFrFPd/bJZe2agXwLuaiIt1MaHsORq.Ynmbfw/eMV6', // 'test'
+    role: 'mentor',
+    is_active: true,
+    is_verified: true,
+    is_premium: true,
+    target_band_score: 8.5,
+    current_level: 'advanced',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    last_login: null,
+    total_points: 0,
+    level: 1,
+    streak_days: 0
+  },
+  {
+    id: 11,
+    email: 'mentor2@edprep.ai',
+    username: 'mentor2',
+    full_name: 'Mentor Two',
+    password: '$2b$10$LgA4KTs01JITFrFPd/bJZe2agXwLuaiIt1MaHsORq.Ynmbfw/eMV6', // 'test'
+    role: 'mentor',
+    is_active: true,
+    is_verified: true,
+    is_premium: true,
+    target_band_score: 8.0,
+    current_level: 'advanced',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    last_login: null,
+    total_points: 0,
+    level: 1,
+    streak_days: 0
+  },
+  {
+    id: 12,
+    email: 'mentor3@edprep.ai',
+    username: 'mentor3',
+    full_name: 'Mentor Three',
+    password: '$2b$10$LgA4KTs01JITFrFPd/bJZe2agXwLuaiIt1MaHsORq.Ynmbfw/eMV6', // 'test'
+    role: 'mentor',
+    is_active: true,
+    is_verified: true,
+    is_premium: true,
+    target_band_score: 7.5,
+    current_level: 'intermediate',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    last_login: null,
+    total_points: 0,
+    level: 1,
+    streak_days: 0
   }
-]
 
 export const mentors = [
   {

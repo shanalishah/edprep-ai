@@ -1,7 +1,7 @@
 // Vercel serverless function for mentorship connect
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { users, getConnections, addConnection } from '@/lib/api-data'
+import { users, mentors, getConnections, addConnection } from '@/lib/api-data'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find mentor
-    const mentor = users.find(u => u.id === mentor_id)
+    const mentor = mentors.find(m => m.id === mentor_id)
     if (!mentor) {
       return NextResponse.json(
         { detail: 'Mentor not found' },
