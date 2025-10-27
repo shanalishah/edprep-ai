@@ -1,0 +1,9 @@
+# Railway Configuration for Backend
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "./start.sh"
+
+[env]
+PYTHON_VERSION = "3.11"

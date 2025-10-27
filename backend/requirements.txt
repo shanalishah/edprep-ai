@@ -1,0 +1,30 @@
+# Core Framework - Minimal for Railway
+fastapi==0.117.1
+uvicorn[standard]==0.37.0
+pydantic==2.11.9
+pydantic-settings==2.1.0
+
+# Database & ORM
+sqlalchemy==2.0.31
+asyncpg==0.29.0
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.20
+
+# AI & LLM Integration
+openai==1.35.13
+anthropic==0.29.0
+
+# ML & Data Science
+scikit-learn==1.7.2
+numpy==2.3.3
+pandas==2.3.2
+nltk==3.8.1
+joblib==1.5.2
+
+# Utilities
+python-dotenv==1.1.1
+httpx==0.25.2
+pypdf==4.3.1
