@@ -23,7 +23,7 @@ import toast from 'react-hot-toast'
 import { supabase } from '../../../lib/supabaseClient'
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
   rememberMe: z.boolean().optional()
 })
@@ -45,6 +45,7 @@ export default function LoginPage() {
   })
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log('Form data:', data) // Debug log
     setIsLoading(true)
     try {
       const provider = process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'backend'
@@ -74,6 +75,7 @@ export default function LoginPage() {
         const formData = new URLSearchParams()
         formData.append('username', data.email)
         formData.append('password', data.password)
+        console.log('Sending login request with:', { email: data.email, password: '***' }) // Debug log
         const response = await fetch(`/api/v1/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -81,6 +83,7 @@ export default function LoginPage() {
         })
         if (!response.ok) {
           const errorData = await response.json()
+          console.error('Login error response:', errorData) // Debug log
           throw new Error(errorData.detail || 'Login failed')
         }
         const result = await response.json()
@@ -90,6 +93,7 @@ export default function LoginPage() {
       }
       
     } catch (error: any) {
+      console.error('Login error:', error) // Debug log
       toast.error(error.message || 'Login failed. Please check your credentials.')
     } finally {
       setIsLoading(false)
