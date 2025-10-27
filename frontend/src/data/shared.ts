@@ -61,7 +61,7 @@ export const users = [
 
 export const mentors = [
   {
-    id: 1,
+    id: 10,
     username: 'mentor1',
     full_name: 'Mentor One',
     email: 'mentor1@edprep.ai',
@@ -82,7 +82,7 @@ export const mentors = [
     }
   },
   {
-    id: 2,
+    id: 11,
     username: 'mentor2',
     full_name: 'Mentor Two',
     email: 'mentor2@edprep.ai',
@@ -103,7 +103,7 @@ export const mentors = [
     }
   },
   {
-    id: 3,
+    id: 12,
     username: 'mentor3',
     full_name: 'Mentor Three',
     email: 'mentor3@edprep.ai',
@@ -130,7 +130,7 @@ let _connections: any[] = [
   // Demo connections for testing
   {
     id: 1,
-    mentor_id: 2,
+    mentor_id: 11,
     mentee_id: 1,
     status: 'pending',
     connection_message: "Let's work together on IELTS preparation!",
@@ -138,12 +138,12 @@ let _connections: any[] = [
     target_band_score: 7.5,
     focus_areas: ['Writing', 'Speaking'],
     created_at: new Date().toISOString(),
-    mentor: mentors[1], // admin2
+    mentor: mentors[1], // mentor2
     mentee: users[0]    // admin1
   },
   {
     id: 2,
-    mentor_id: 3,
+    mentor_id: 12,
     mentee_id: 1,
     status: 'pending',
     connection_message: "I'd love to help you improve your IELTS skills!",
@@ -151,7 +151,7 @@ let _connections: any[] = [
     target_band_score: 8.0,
     focus_areas: ['Speaking', 'Listening'],
     created_at: new Date().toISOString(),
-    mentor: mentors[2], // admin3
+    mentor: mentors[2], // mentor3
     mentee: users[0]    // admin1
   }
 ]
