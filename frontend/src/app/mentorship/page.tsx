@@ -201,7 +201,6 @@ export default function MentorshipPage() {
       // Set default tab based on user role
       if (user.role === 'mentor' || user.role === 'tutor') {
         setActiveTab('profile') // Start with profile setup for mentors
-      } else {
         setActiveTab('find')
       }
       
@@ -241,7 +240,6 @@ export default function MentorshipPage() {
     if (type === 'success') {
       setSuccess(message)
       setError(null)
-    } else {
       setError(message)
       setSuccess(null)
     }
@@ -271,7 +269,6 @@ export default function MentorshipPage() {
       if (response.ok) {
         const data = await response.json()
         setMentors(data.mentors || [])
-      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -293,7 +290,6 @@ export default function MentorshipPage() {
       if (response.ok) {
         const data = await response.json()
         setConnections(data.connections || [])
-      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -310,14 +306,10 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
-      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
-      if (useSupabase) {
-        const { data: session } = await supabase.auth.getSession()
         if (!session?.session?.user) {
           showMessage('Please sign in to connect.', 'error')
           return
         }
-        const { error } = await supabase.rpc('request_connection', {
           p_mentor_id: mentorId,
           p_message: requestMessage || null,
           p_goals: requestGoals ? requestGoals.split(',').map(s => s.trim()) : null,
@@ -328,7 +320,6 @@ export default function MentorshipPage() {
         showMessage('Connection request sent successfully!', 'success')
         fetchConnections()
         setRequestMessage(''); setRequestGoals(''); setRequestTargetBandScore(''); setRequestFocusAreas('')
-      } else {
         const token = localStorage.getItem('access_token')
         if (!token) return
         const response = await fetch(`/api/v1/mentorship/connect`, {
@@ -349,7 +340,6 @@ export default function MentorshipPage() {
           showMessage('Connection request sent successfully!', 'success')
           fetchConnections()
           setRequestMessage(''); setRequestGoals(''); setRequestTargetBandScore(''); setRequestFocusAreas('')
-        } else {
           const raw = await response.text().catch(() => '')
           let detail = ''
           try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -391,7 +381,6 @@ export default function MentorshipPage() {
       if (response.ok) {
         showMessage('Profile updated successfully!', 'success')
         fetchConnections() // Refresh data
-      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -408,16 +397,12 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
-      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
-      if (useSupabase) {
-        const { error } = await supabase
           .from('mentorship_connections')
           .update({ status: 'active' })
           .eq('id', connectionId)
         if (error) throw error
         showMessage('Connection request accepted!', 'success')
         fetchConnections()
-      } else {
         const token = localStorage.getItem('access_token')
         if (!token) return
         const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/accept`, {
@@ -427,7 +412,6 @@ export default function MentorshipPage() {
         if (response.ok) {
           showMessage('Connection request accepted!', 'success')
           fetchConnections()
-        } else {
           const raw = await response.text().catch(() => '')
           let detail = ''
           try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -447,16 +431,12 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
-      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
-      if (useSupabase) {
-        const { error } = await supabase
           .from('mentorship_connections')
           .update({ status: 'cancelled' })
           .eq('id', connectionId)
         if (error) throw error
         showMessage('Connection request rejected.', 'success')
         fetchConnections()
-      } else {
         const token = localStorage.getItem('access_token')
         if (!token) return
         const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/reject`, {
@@ -466,7 +446,6 @@ export default function MentorshipPage() {
         if (response.ok) {
           showMessage('Connection request rejected.', 'success')
           fetchConnections()
-        } else {
           const raw = await response.text().catch(() => '')
           let detail = ''
           try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -490,16 +469,12 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
-      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
-      if (useSupabase) {
-        const { error } = await supabase
           .from('mentorship_connections')
           .delete()
           .eq('id', connectionId)
         if (error) throw error
         showMessage('Connection deleted successfully.', 'success')
         fetchConnections()
-      } else {
         const token = localStorage.getItem('access_token')
         if (!token) return
         const response = await fetch(`/api/v1/mentorship/connections/${connectionId}`, {
@@ -512,7 +487,6 @@ export default function MentorshipPage() {
         if (response.ok) {
           showMessage('Connection deleted successfully.', 'success')
           fetchConnections()
-        } else {
           const errorData = await response.json()
           showMessage(`Failed to delete connection: ${errorData.detail}`, 'error')
         }
@@ -533,8 +507,6 @@ export default function MentorshipPage() {
   // Session Management Functions
   const fetchSessions = async () => {
     try {
-      const useSupabase = false // Force backend API for local development
-      if (useSupabase) {
         // Not implemented in Supabase mode yet; avoid noisy error
         setSessions([])
         return
@@ -547,7 +519,6 @@ export default function MentorshipPage() {
       if (response.ok) {
         const data = await response.json()
         setSessions(data.sessions || [])
-      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -595,7 +566,6 @@ export default function MentorshipPage() {
           agenda: ''
         })
         fetchSessions()
-      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -633,7 +603,6 @@ export default function MentorshipPage() {
       if (response.ok) {
         showMessage('Session completed successfully!', 'success')
         fetchSessions()
-      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -673,7 +642,6 @@ export default function MentorshipPage() {
         setShowRatingModal(false)
         setRatingForm({ rating: 5, feedback: '' })
         fetchConnections()
-      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -712,7 +680,6 @@ export default function MentorshipPage() {
         showMessage('Work shared successfully!', 'success')
         setShowWorkShareModal(false)
         setWorkShareForm({ title: '', content: '', work_type: 'essay', description: '' })
-      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
