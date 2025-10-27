@@ -50,6 +50,7 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       const provider = process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'backend'
+      console.log('🔧 Provider:', provider) // Debug log
       if (provider === 'supabase' && supabase) {
         const { data: auth, error } = await supabase.auth.signInWithPassword({
           email: data.email,
@@ -74,6 +75,7 @@ export default function LoginPage() {
         router.push('/dashboard')
       } else {
         // Use Railway backend for authentication
+        console.log('🚀 Using Railway backend for authentication') // Debug log
         const formData = new URLSearchParams()
         formData.append('username', data.email)
         formData.append('password', data.password)
