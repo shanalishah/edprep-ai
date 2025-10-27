@@ -126,8 +126,36 @@ export const mentors = [
 ]
 
 // Shared connections array - use getter/setter functions
-let _connections: any[] = []
-let _connectionIdCounter = 1
+let _connections: any[] = [
+  // Demo connections for testing
+  {
+    id: 1,
+    mentor_id: 2,
+    mentee_id: 1,
+    status: 'pending',
+    connection_message: "Let's work together on IELTS preparation!",
+    goals: ['Improve IELTS score', 'Get personalized feedback'],
+    target_band_score: 7.5,
+    focus_areas: ['Writing', 'Speaking'],
+    created_at: new Date().toISOString(),
+    mentor: mentors[1], // admin2
+    mentee: users[0]    // admin1
+  },
+  {
+    id: 2,
+    mentor_id: 3,
+    mentee_id: 1,
+    status: 'pending',
+    connection_message: "I'd love to help you improve your IELTS skills!",
+    goals: ['Achieve band 8', 'Focus on speaking'],
+    target_band_score: 8.0,
+    focus_areas: ['Speaking', 'Listening'],
+    created_at: new Date().toISOString(),
+    mentor: mentors[2], // admin3
+    mentee: users[0]    // admin1
+  }
+]
+let _connectionIdCounter = 3
 
 export function getConnections() {
   return _connections
@@ -137,6 +165,23 @@ export function addConnection(connection: any) {
   connection.id = _connectionIdCounter++
   _connections.push(connection)
   return connection
+}
+
+export function updateConnection(connectionId: number, updates: any) {
+  const index = _connections.findIndex(c => c.id === connectionId)
+  if (index !== -1) {
+    _connections[index] = { ..._connections[index], ...updates }
+    return _connections[index]
+  }
+  return null
+}
+
+export function removeConnection(connectionId: number) {
+  const index = _connections.findIndex(c => c.id === connectionId)
+  if (index !== -1) {
+    return _connections.splice(index, 1)[0]
+  }
+  return null
 }
 
 export function getConnectionIdCounter() {

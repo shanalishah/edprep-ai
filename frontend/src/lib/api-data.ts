@@ -1,7 +1,7 @@
 // Centralized data import resolver for all API routes
 // This ensures consistent imports across all API endpoints regardless of their depth
 
-import { users, mentors, getConnections, addConnection, getMessages, addMessage, getSessions, addSession } from '../data/shared'
+import { users, mentors, getConnections, addConnection, updateConnection, removeConnection, getMessages, addMessage, getSessions, addSession } from '../data/shared'
 
 // Re-export all data functions for consistent access
 export {
@@ -9,6 +9,8 @@ export {
   mentors,
   getConnections,
   addConnection,
+  updateConnection,
+  removeConnection,
   getMessages,
   addMessage,
   getSessions,

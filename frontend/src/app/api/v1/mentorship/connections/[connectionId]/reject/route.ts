@@ -1,7 +1,7 @@
 // Vercel serverless function for rejecting mentorship connections
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { users, getConnections } from '@/lib/api-data'
+import { users, getConnections, removeConnection } from '@/lib/api-data'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -31,16 +31,14 @@ export async function POST(request: NextRequest, { params }: { params: { connect
 
     const connectionId = parseInt(params.connectionId)
     const connections = getConnections()
-    const connectionIndex = connections.findIndex(c => c.id === connectionId)
+    const connection = connections.find(c => c.id === connectionId)
 
-    if (connectionIndex === -1) {
+    if (!connection) {
       return NextResponse.json(
         { detail: 'Connection not found' },
         { status: 404 }
       )
     }
-
-    const connection = connections[connectionIndex]
 
     // Check if current user is the mentor for this connection
     if (connection.mentor_id !== currentUser.id) {
@@ -51,7 +49,14 @@ export async function POST(request: NextRequest, { params }: { params: { connect
     }
 
     // Remove the connection
-    connections.splice(connectionIndex, 1)
+    const removedConnection = removeConnection(connectionId)
+    
+    if (!removedConnection) {
+      return NextResponse.json(
+        { detail: 'Failed to remove connection' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,

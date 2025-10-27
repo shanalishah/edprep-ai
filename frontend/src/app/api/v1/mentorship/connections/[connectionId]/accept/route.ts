@@ -1,7 +1,7 @@
 // Vercel serverless function for accepting mentorship connections
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { users, getConnections } from '@/lib/api-data'
+import { users, getConnections, updateConnection } from '@/lib/api-data'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -49,13 +49,22 @@ export async function POST(request: NextRequest, { params }: { params: { connect
     }
 
     // Update connection status to active
-    connection.status = 'active'
-    connection.updated_at = new Date().toISOString()
+    const updatedConnection = updateConnection(connectionId, {
+      status: 'active',
+      updated_at: new Date().toISOString()
+    })
+
+    if (!updatedConnection) {
+      return NextResponse.json(
+        { detail: 'Failed to update connection' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Connection request accepted successfully',
-      connection: connection
+      connection: updatedConnection
     })
 
   } catch (error) {
