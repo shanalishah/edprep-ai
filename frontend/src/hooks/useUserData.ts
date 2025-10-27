@@ -50,7 +50,7 @@ export function useUserData() {
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -67,7 +67,7 @@ export function useUserData() {
       if (!response.ok) {
         if (response.status === 401) {
           // Token expired or invalid
-          localStorage.removeItem('token');
+          localStorage.removeItem('access_token');
           localStorage.removeItem('user');
           window.location.href = '/auth/login';
           return;
@@ -87,7 +87,7 @@ export function useUserData() {
 
   const fetchUserProgress = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       if (!token) {
         throw new Error('No authentication token found');
       }

@@ -113,7 +113,7 @@ export default function ChatPage() {
         return
       }
       
-      const response = await fetch(`/api/v1/mentorship/connections/${connectionId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       
@@ -143,7 +143,7 @@ export default function ChatPage() {
         return
       }
 
-      const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/messages`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 
@@ -175,7 +175,7 @@ export default function ChatPage() {
         return
       }
 
-      const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/messages`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/v1/mentorship/connections/${connectionId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
