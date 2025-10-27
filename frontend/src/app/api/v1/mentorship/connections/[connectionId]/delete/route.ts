@@ -1,7 +1,7 @@
 // Vercel serverless function for deleting mentorship connections
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { users, getConnections } from '../../../../../../../data/shared'
+import { users, getConnections } from '../../../../../../../../frontend/src/data/shared'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

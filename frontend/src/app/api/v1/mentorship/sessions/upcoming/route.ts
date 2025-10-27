@@ -1,7 +1,7 @@
 // Vercel serverless function for upcoming sessions
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { users, getSessions } from '../../../../../../../data/shared'
+import { users, getSessions } from '../../../../../../../../frontend/src/data/shared'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
