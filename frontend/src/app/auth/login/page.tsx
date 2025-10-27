@@ -77,8 +77,9 @@ export default function LoginPage() {
         const formData = new URLSearchParams()
         formData.append('username', data.email)
         formData.append('password', data.password)
-        console.log('Sending login request to Railway backend:', { email: data.email, password: '***' }) // Debug log
-        const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.AUTH_LOGIN, true), {
+        const apiUrl = getApiUrl(API_CONFIG.ENDPOINTS.AUTH_LOGIN, true)
+        console.log('🚀 Sending login request to Railway backend:', { email: data.email, password: '***', apiUrl }) // Debug log
+        const response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: formData.toString(),
