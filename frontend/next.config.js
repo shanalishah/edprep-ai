@@ -16,8 +16,6 @@ const nextConfig = {
   experimental: {
     // Enable modern bundling
     esmExternals: true,
-    // Optimize bundle size
-    optimizeCss: true,
     // Enable SWC minification
     swcMinify: true,
   },
