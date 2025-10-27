@@ -1,6 +1,6 @@
 """
-Vercel Python API for IELTS Master Platform
-Replicates the FastAPI backend functionality for deployment
+Simplified Vercel Python API for IELTS Master Platform
+Optimized for Vercel's serverless environment
 """
 
 import os
@@ -14,147 +14,137 @@ from typing import Dict, List, Any, Optional
 from urllib.parse import parse_qs
 import re
 
-# Database setup
-DB_PATH = "/tmp/ielts_master.db"
+# In-memory database for Vercel (since SQLite doesn't persist in serverless)
+USERS_DB = {}
+CONNECTIONS_DB = {}
+MESSAGES_DB = {}
+MESSAGE_ID_COUNTER = 1
 
 def init_database():
-    """Initialize SQLite database"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    """Initialize in-memory database with default users"""
+    global USERS_DB, CONNECTIONS_DB, MESSAGES_DB, MESSAGE_ID_COUNTER
     
-    # Create users table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            username TEXT UNIQUE NOT NULL,
-            full_name TEXT NOT NULL,
-            hashed_password TEXT NOT NULL,
-            role TEXT DEFAULT 'student',
-            is_active BOOLEAN DEFAULT 1,
-            is_verified BOOLEAN DEFAULT 1,
-            is_premium BOOLEAN DEFAULT 0,
-            target_band_score REAL DEFAULT 7.0,
-            current_level TEXT DEFAULT 'intermediate',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_login TIMESTAMP,
-            total_points INTEGER DEFAULT 0,
-            level INTEGER DEFAULT 1,
-            streak_days INTEGER DEFAULT 0
-        )
-    ''')
+    # Create 3 admin users
+    admin_users = [
+        {
+            'id': 1,
+            'email': 'admin1@edprep.ai',
+            'username': 'admin1',
+            'full_name': 'Admin User 1',
+            'hashed_password': bcrypt.hashpw(b'test', bcrypt.gensalt()).decode('utf-8'),
+            'role': 'admin',
+            'is_active': True,
+            'is_verified': True,
+            'is_premium': True,
+            'target_band_score': 8.5,
+            'current_level': 'advanced',
+            'created_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat(),
+            'last_login': None,
+            'total_points': 0,
+            'level': 1,
+            'streak_days': 0
+        },
+        {
+            'id': 2,
+            'email': 'admin2@edprep.ai',
+            'username': 'admin2',
+            'full_name': 'Admin User 2',
+            'hashed_password': bcrypt.hashpw(b'test', bcrypt.gensalt()).decode('utf-8'),
+            'role': 'admin',
+            'is_active': True,
+            'is_verified': True,
+            'is_premium': True,
+            'target_band_score': 8.5,
+            'current_level': 'advanced',
+            'created_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat(),
+            'last_login': None,
+            'total_points': 0,
+            'level': 1,
+            'streak_days': 0
+        },
+        {
+            'id': 3,
+            'email': 'admin3@edprep.ai',
+            'username': 'admin3',
+            'full_name': 'Admin User 3',
+            'hashed_password': bcrypt.hashpw(b'test', bcrypt.gensalt()).decode('utf-8'),
+            'role': 'admin',
+            'is_active': True,
+            'is_verified': True,
+            'is_premium': True,
+            'target_band_score': 8.5,
+            'current_level': 'advanced',
+            'created_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat(),
+            'last_login': None,
+            'total_points': 0,
+            'level': 1,
+            'streak_days': 0
+        }
+    ]
     
-    # Create mentorship connections table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS mentorship_connections (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            mentor_id INTEGER NOT NULL,
-            mentee_id INTEGER NOT NULL,
-            status TEXT DEFAULT 'pending',
-            connection_message TEXT,
-            goals TEXT,
-            target_band_score REAL,
-            focus_areas TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (mentor_id) REFERENCES users (id),
-            FOREIGN KEY (mentee_id) REFERENCES users (id)
-        )
-    ''')
+    # Initialize users
+    for user in admin_users:
+        USERS_DB[user['id']] = user
+        USERS_DB[user['email']] = user
     
-    # Create mentorship messages table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS mentorship_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            connection_id INTEGER NOT NULL,
-            sender_id INTEGER NOT NULL,
-            message_type TEXT DEFAULT 'text',
-            content TEXT,
-            file_url TEXT,
-            file_name TEXT,
-            file_size INTEGER,
-            is_read BOOLEAN DEFAULT 0,
-            read_at TIMESTAMP,
-            is_edited BOOLEAN DEFAULT 0,
-            edited_at TIMESTAMP,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (connection_id) REFERENCES mentorship_connections (id),
-            FOREIGN KEY (sender_id) REFERENCES users (id)
-        )
-    ''')
+    # Create sample connection
+    CONNECTIONS_DB[1] = {
+        'id': 1,
+        'mentor_id': 1,
+        'mentee_id': 2,
+        'status': 'active',
+        'connection_message': "Let's work together on IELTS preparation!",
+        'goals': ['Improve IELTS score', 'Get personalized feedback'],
+        'target_band_score': 7.5,
+        'focus_areas': ['Writing', 'Speaking'],
+        'created_at': datetime.now().isoformat(),
+        'mentor': USERS_DB[1],
+        'mentee': USERS_DB[2]
+    }
     
-    conn.commit()
-    conn.close()
-
-def create_default_users():
-    """Create the 3 admin users"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    # Create sample messages
+    MESSAGES_DB[1] = {
+        'id': 1,
+        'connection_id': 1,
+        'sender_id': 1,
+        'message_type': 'text',
+        'content': 'Welcome! I\'m excited to help you with your IELTS preparation.',
+        'file_url': None,
+        'file_name': None,
+        'file_size': None,
+        'is_read': False,
+        'read_at': None,
+        'is_edited': False,
+        'edited_at': None,
+        'created_at': datetime.now().isoformat(),
+        'sender': USERS_DB[1]
+    }
     
-    # Check if users already exist
-    cursor.execute("SELECT COUNT(*) FROM users WHERE email LIKE 'admin%@edprep.ai'")
-    count = cursor.fetchone()[0]
+    MESSAGES_DB[2] = {
+        'id': 2,
+        'connection_id': 1,
+        'sender_id': 2,
+        'message_type': 'text',
+        'content': 'Thank you! I\'m looking forward to improving my writing skills.',
+        'file_url': None,
+        'file_name': None,
+        'file_size': None,
+        'is_read': False,
+        'read_at': None,
+        'is_edited': False,
+        'edited_at': None,
+        'created_at': datetime.now().isoformat(),
+        'sender': USERS_DB[2]
+    }
     
-    if count == 0:
-        # Create 3 admin users
-        admin_users = [
-            ('admin1@edprep.ai', 'admin1', 'Admin User 1'),
-            ('admin2@edprep.ai', 'admin2', 'Admin User 2'),
-            ('admin3@edprep.ai', 'admin3', 'Admin User 3')
-        ]
-        
-        for email, username, full_name in admin_users:
-            hashed_password = bcrypt.hashpw(b'test', bcrypt.gensalt()).decode('utf-8')
-            cursor.execute('''
-                INSERT INTO users (email, username, full_name, hashed_password, role, is_active, is_verified, is_premium, target_band_score, current_level)
-                VALUES (?, ?, ?, ?, 'admin', 1, 1, 1, 8.5, 'advanced')
-            ''', (email, username, full_name, hashed_password))
-        
-        # Create some sample connections
-        cursor.execute('''
-            INSERT INTO mentorship_connections (mentor_id, mentee_id, status, connection_message, goals, target_band_score, focus_areas)
-            VALUES (1, 2, 'active', 'Let''s work together on IELTS preparation!', '["Improve IELTS score", "Get personalized feedback"]', 7.5, '["Writing", "Speaking"]')
-        ''')
-        
-        # Create some sample messages
-        cursor.execute('''
-            INSERT INTO mentorship_messages (connection_id, sender_id, message_type, content)
-            VALUES (1, 1, 'text', 'Welcome! I''m excited to help you with your IELTS preparation.'),
-                   (1, 2, 'text', 'Thank you! I''m looking forward to improving my writing skills.')
-        ''')
-    
-    conn.commit()
-    conn.close()
+    MESSAGE_ID_COUNTER = 3
 
 def get_user_by_email(email: str) -> Optional[Dict]:
     """Get user by email"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
-    row = cursor.fetchone()
-    conn.close()
-    
-    if row:
-        return {
-            'id': row[0],
-            'email': row[1],
-            'username': row[2],
-            'full_name': row[3],
-            'hashed_password': row[4],
-            'role': row[5],
-            'is_active': bool(row[6]),
-            'is_verified': bool(row[7]),
-            'is_premium': bool(row[8]),
-            'target_band_score': row[9],
-            'current_level': row[10],
-            'created_at': row[11],
-            'updated_at': row[12],
-            'last_login': row[13],
-            'total_points': row[14],
-            'level': row[15],
-            'streak_days': row[16]
-        }
-    return None
+    return USERS_DB.get(email)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify password"""
@@ -180,220 +170,78 @@ def get_current_user(auth_header: str) -> Optional[Dict]:
     try:
         payload = jwt.decode(token, 'secret-key', algorithms=['HS256'])
         user_id = int(payload['sub'])
-        
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-        row = cursor.fetchone()
-        conn.close()
-        
-        if row:
-            return {
-                'user_id': row[0],
-                'email': row[1],
-                'username': row[2],
-                'full_name': row[3],
-                'role': row[5]
-            }
+        return USERS_DB.get(user_id)
     except:
-        pass
-    return None
+        return None
 
 def get_mentors() -> List[Dict]:
     """Get available mentors"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE role IN ('admin', 'mentor', 'tutor') AND is_active = 1")
-    rows = cursor.fetchall()
-    conn.close()
-    
     mentors = []
-    for row in rows:
-        mentors.append({
-            'id': row[0],
-            'email': row[1],
-            'username': row[2],
-            'full_name': row[3],
-            'role': row[5],
-            'target_band_score': row[9],
-            'current_level': row[10],
-            'profile': {
-                'bio': f"Experienced {row[5]} with expertise in IELTS preparation",
-                'teaching_experience': "5+ years",
-                'specializations': ['Writing', 'Speaking', 'Reading', 'Listening'],
-                'average_rating': 4.8,
-                'total_mentees_helped': 50,
-                'is_available_for_mentorship': True
-            }
-        })
+    for user_id, user in USERS_DB.items():
+        if isinstance(user_id, int) and user.get('role') in ['admin', 'mentor', 'tutor']:
+            mentors.append({
+                'id': user['id'],
+                'email': user['email'],
+                'username': user['username'],
+                'full_name': user['full_name'],
+                'role': user['role'],
+                'target_band_score': user['target_band_score'],
+                'current_level': user['current_level'],
+                'profile': {
+                    'bio': f"Experienced {user['role']} with expertise in IELTS preparation",
+                    'teaching_experience': "5+ years",
+                    'specializations': ['Writing', 'Speaking', 'Reading', 'Listening'],
+                    'average_rating': 4.8,
+                    'total_mentees_helped': 50,
+                    'is_available_for_mentorship': True
+                }
+            })
     return mentors
 
 def get_connections(user_id: int) -> List[Dict]:
     """Get user connections"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT c.*, 
-               m.email as mentor_email, m.username as mentor_username, m.full_name as mentor_name, m.role as mentor_role,
-               e.email as mentee_email, e.username as mentee_username, e.full_name as mentee_name, e.role as mentee_role
-        FROM mentorship_connections c
-        LEFT JOIN users m ON c.mentor_id = m.id
-        LEFT JOIN users e ON c.mentee_id = e.id
-        WHERE c.mentor_id = ? OR c.mentee_id = ?
-        ORDER BY c.created_at DESC
-    ''', (user_id, user_id))
-    rows = cursor.fetchall()
-    conn.close()
-    
     connections = []
-    for row in rows:
-        connections.append({
-            'id': row[0],
-            'mentor_id': row[1],
-            'mentee_id': row[2],
-            'status': row[3],
-            'connection_message': row[4],
-            'goals': json.loads(row[5]) if row[5] else [],
-            'target_band_score': row[6],
-            'focus_areas': json.loads(row[7]) if row[7] else [],
-            'created_at': row[8],
-            'mentor': {
-                'id': row[1],
-                'email': row[9],
-                'username': row[10],
-                'full_name': row[11],
-                'role': row[12]
-            },
-            'mentee': {
-                'id': row[2],
-                'email': row[13],
-                'username': row[14],
-                'full_name': row[15],
-                'role': row[16]
-            }
-        })
+    for conn_id, conn in CONNECTIONS_DB.items():
+        if conn['mentor_id'] == user_id or conn['mentee_id'] == user_id:
+            connections.append(conn)
     return connections
 
 def get_connection_by_id(connection_id: int, user_id: int) -> Optional[Dict]:
     """Get connection by ID"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT c.*, 
-               m.email as mentor_email, m.username as mentor_username, m.full_name as mentor_name, m.role as mentor_role,
-               e.email as mentee_email, e.username as mentee_username, e.full_name as mentee_name, e.role as mentee_role
-        FROM mentorship_connections c
-        LEFT JOIN users m ON c.mentor_id = m.id
-        LEFT JOIN users e ON c.mentee_id = e.id
-        WHERE c.id = ? AND (c.mentor_id = ? OR c.mentee_id = ?)
-    ''', (connection_id, user_id, user_id))
-    row = cursor.fetchone()
-    conn.close()
-    
-    if row:
-        return {
-            'id': row[0],
-            'mentor_id': row[1],
-            'mentee_id': row[2],
-            'status': row[3],
-            'connection_message': row[4],
-            'goals': json.loads(row[5]) if row[5] else [],
-            'target_band_score': row[6],
-            'focus_areas': json.loads(row[7]) if row[7] else [],
-            'created_at': row[8],
-            'mentor': {
-                'id': row[1],
-                'email': row[9],
-                'username': row[10],
-                'full_name': row[11],
-                'role': row[12]
-            },
-            'mentee': {
-                'id': row[2],
-                'email': row[13],
-                'username': row[14],
-                'full_name': row[15],
-                'role': row[16]
-            }
-        }
+    conn = CONNECTIONS_DB.get(connection_id)
+    if conn and (conn['mentor_id'] == user_id or conn['mentee_id'] == user_id):
+        return conn
     return None
 
 def get_messages(connection_id: int, user_id: int) -> List[Dict]:
     """Get messages for a connection"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
     # Verify user has access to this connection
-    cursor.execute('''
-        SELECT id FROM mentorship_connections 
-        WHERE id = ? AND (mentor_id = ? OR mentee_id = ?)
-    ''', (connection_id, user_id, user_id))
-    
-    if not cursor.fetchone():
-        conn.close()
+    conn = CONNECTIONS_DB.get(connection_id)
+    if not conn or (conn['mentor_id'] != user_id and conn['mentee_id'] != user_id):
         return []
     
-    cursor.execute('''
-        SELECT m.*, u.email, u.username, u.full_name, u.role
-        FROM mentorship_messages m
-        LEFT JOIN users u ON m.sender_id = u.id
-        WHERE m.connection_id = ?
-        ORDER BY m.created_at ASC
-    ''', (connection_id,))
-    rows = cursor.fetchall()
-    conn.close()
-    
     messages = []
-    for row in rows:
-        messages.append({
-            'id': row[0],
-            'connection_id': row[1],
-            'sender_id': row[2],
-            'message_type': row[3],
-            'content': row[4],
-            'file_url': row[5],
-            'file_name': row[6],
-            'file_size': row[7],
-            'is_read': bool(row[8]),
-            'read_at': row[9],
-            'is_edited': bool(row[10]),
-            'edited_at': row[11],
-            'created_at': row[12],
-            'sender': {
-                'id': row[2],
-                'email': row[13],
-                'username': row[14],
-                'full_name': row[15],
-                'role': row[16]
-            }
-        })
+    for msg_id, msg in MESSAGES_DB.items():
+        if msg['connection_id'] == connection_id:
+            messages.append(msg)
+    
+    # Sort by created_at
+    messages.sort(key=lambda x: x['created_at'])
     return messages
 
 def send_message(connection_id: int, sender_id: int, content: str, message_type: str = 'text') -> Dict:
     """Send a message"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    global MESSAGE_ID_COUNTER
     
     # Verify user has access to this connection
-    cursor.execute('''
-        SELECT id FROM mentorship_connections 
-        WHERE id = ? AND (mentor_id = ? OR mentee_id = ?)
-    ''', (connection_id, sender_id, sender_id))
-    
-    if not cursor.fetchone():
-        conn.close()
+    conn = CONNECTIONS_DB.get(connection_id)
+    if not conn or (conn['mentor_id'] != sender_id and conn['mentee_id'] != sender_id):
         raise ValueError("Connection not found or user not authorized")
     
-    cursor.execute('''
-        INSERT INTO mentorship_messages (connection_id, sender_id, message_type, content)
-        VALUES (?, ?, ?, ?)
-    ''', (connection_id, sender_id, message_type, content))
+    message_id = MESSAGE_ID_COUNTER
+    MESSAGE_ID_COUNTER += 1
     
-    message_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    
-    return {
+    message = {
         'id': message_id,
         'connection_id': connection_id,
         'sender_id': sender_id,
@@ -407,44 +255,16 @@ def send_message(connection_id: int, sender_id: int, content: str, message_type:
         'is_edited': False,
         'edited_at': None,
         'created_at': datetime.now().isoformat(),
-        'sender': get_user_by_email(get_user_by_id(sender_id)['email'])
+        'sender': USERS_DB[sender_id]
     }
-
-def get_user_by_id(user_id: int) -> Optional[Dict]:
-    """Get user by ID"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-    row = cursor.fetchone()
-    conn.close()
     
-    if row:
-        return {
-            'id': row[0],
-            'email': row[1],
-            'username': row[2],
-            'full_name': row[3],
-            'hashed_password': row[4],
-            'role': row[5],
-            'is_active': bool(row[6]),
-            'is_verified': bool(row[7]),
-            'is_premium': bool(row[8]),
-            'target_band_score': row[9],
-            'current_level': row[10],
-            'created_at': row[11],
-            'updated_at': row[12],
-            'last_login': row[13],
-            'total_points': row[14],
-            'level': row[15],
-            'streak_days': row[16]
-        }
-    return None
+    MESSAGES_DB[message_id] = message
+    return message
 
 def handler(request):
     """Main request handler"""
     # Initialize database
     init_database()
-    create_default_users()
     
     # Parse request
     method = request.get('method', 'GET')
@@ -604,7 +424,7 @@ def handle_get_connections(headers: Dict, cors_headers: Dict) -> Dict:
             'body': json.dumps({'detail': 'Authentication required'})
         }
     
-    connections = get_connections(current_user['user_id'])
+    connections = get_connections(current_user['id'])
     
     return {
         'statusCode': 200,
@@ -628,7 +448,7 @@ def handle_get_connection(connection_id: int, headers: Dict, cors_headers: Dict)
             'body': json.dumps({'detail': 'Authentication required'})
         }
     
-    connection = get_connection_by_id(connection_id, current_user['user_id'])
+    connection = get_connection_by_id(connection_id, current_user['id'])
     
     if not connection:
         return {
@@ -658,7 +478,7 @@ def handle_get_messages(connection_id: int, headers: Dict, cors_headers: Dict) -
             'body': json.dumps({'detail': 'Authentication required'})
         }
     
-    messages = get_messages(connection_id, current_user['user_id'])
+    messages = get_messages(connection_id, current_user['id'])
     
     return {
         'statusCode': 200,
@@ -694,7 +514,7 @@ def handle_send_message(connection_id: int, body: str, headers: Dict, cors_heade
                 'body': json.dumps({'detail': 'Message content required'})
             }
         
-        message = send_message(connection_id, current_user['user_id'], content, message_type)
+        message = send_message(connection_id, current_user['id'], content, message_type)
         
         return {
             'statusCode': 200,
