@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../providers'
+
+// Dummy supabase to prevent TypeScript errors
+const supabase = null as any
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
@@ -201,6 +204,7 @@ export default function MentorshipPage() {
       // Set default tab based on user role
       if (user.role === 'mentor' || user.role === 'tutor') {
         setActiveTab('profile') // Start with profile setup for mentors
+      } else {
         setActiveTab('find')
       }
       
@@ -240,6 +244,7 @@ export default function MentorshipPage() {
     if (type === 'success') {
       setSuccess(message)
       setError(null)
+    } else {
       setError(message)
       setSuccess(null)
     }
@@ -251,28 +256,49 @@ export default function MentorshipPage() {
 
   const fetchMentors = async () => {
     try {
-      const token = localStorage.getItem('access_token')
-      if (!token) return
-      const queryParams = new URLSearchParams()
-      if (searchFilters.specializations) {
-        queryParams.append('specializations', JSON.stringify(searchFilters.specializations.split(',').map(s => s.trim())))
-      }
-      if (searchFilters.target_band_score) {
-        queryParams.append('target_band_score', searchFilters.target_band_score)
-      }
-      if (searchFilters.timezone) {
-        queryParams.append('timezone', searchFilters.timezone)
-      }
-      const response = await fetch(`/api/v1/mentorship/mentors?${queryParams.toString()}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setMentors(data.mentors || [])
-        const raw = await response.text().catch(() => '')
-        let detail = ''
-        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
-        showMessage(`Failed to fetch mentors: ${detail}`, 'error')
+      const useSupabase = false // Force backend API
+      if (useSupabase) {
+        let query = supabase
+          .from('profiles')
+          .select('*')
+          .eq('role','mentor')
+          .eq('is_available_for_mentorship', true)
+
+        if (searchFilters.timezone) query = query.eq('timezone', searchFilters.timezone)
+        // simple contains on specializations if provided
+        if (searchFilters.specializations) {
+          // NOTE: for better search use full text or jsonb @> with exact array
+          query = query.contains('specializations', [searchFilters.specializations.split(',')[0].trim()])
+        }
+
+        const { data, error } = await query
+        if (error) throw error
+        setMentors((data as any) || [])
+      } else {
+        const token = localStorage.getItem('access_token')
+        if (!token) return
+        const queryParams = new URLSearchParams()
+        if (searchFilters.specializations) {
+          queryParams.append('specializations', JSON.stringify(searchFilters.specializations.split(',').map(s => s.trim())))
+        }
+        if (searchFilters.target_band_score) {
+          queryParams.append('target_band_score', searchFilters.target_band_score)
+        }
+        if (searchFilters.timezone) {
+          queryParams.append('timezone', searchFilters.timezone)
+        }
+        const response = await fetch(`/api/v1/mentorship/mentors?${queryParams.toString()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setMentors(data.mentors || [])
+        } else {
+          const raw = await response.text().catch(() => '')
+          let detail = ''
+          try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+          showMessage(`Failed to fetch mentors: ${detail}`, 'error')
+        }
       }
     } catch (error) {
       console.error('Error fetching mentors:', error)
@@ -282,6 +308,48 @@ export default function MentorshipPage() {
 
   const fetchConnections = async () => {
     try {
+      const useSupabase = false // Force backend API
+      if (useSupabase) {
+        const { data: sess } = await supabase.auth.getSession()
+        const uid = sess?.session?.user?.id
+        if (!uid) {
+          showMessage('Please sign in to view connections.', 'error')
+          return
+        }
+
+        const { data: conns, error } = await supabase
+          .from('mentorship_connections')
+          .select('*')
+          .or(`mentor_id.eq.${uid},mentee_id.eq.${uid}`)
+          .order('created_at', { ascending: false })
+        if (error) throw error
+
+        const userIds = Array.from(new Set((conns || []).flatMap((c: any) => [c.mentor_id, c.mentee_id])))
+        const { data: profs, error: perr } = await supabase
+          .from('profiles')
+          .select('id,username,full_name,email,role')
+          .in('id', userIds.length ? userIds : ['00000000-0000-0000-0000-000000000000'])
+        if (perr) throw perr
+
+        const idToProfile: Record<string, any> = {}
+        ;(profs || []).forEach((p: any) => { idToProfile[p.id] = p })
+        const transformed = (conns || []).map((c: any) => ({
+          id: c.id,
+          mentor_id: c.mentor_id,
+          mentee_id: c.mentee_id,
+          status: c.status,
+          connection_message: c.connection_message,
+          goals: c.goals || [],
+          target_band_score: c.target_band_score || 0,
+          focus_areas: c.focus_areas || [],
+          created_at: c.created_at,
+          mentor: idToProfile[c.mentor_id] || null,
+          mentee: idToProfile[c.mentee_id] || null,
+        }))
+        setConnections(transformed as any)
+        return
+      }
+
       const token = localStorage.getItem('access_token')
       if (!token) return
       const response = await fetch(`/api/v1/mentorship/connections`, {
@@ -290,6 +358,7 @@ export default function MentorshipPage() {
       if (response.ok) {
         const data = await response.json()
         setConnections(data.connections || [])
+      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -306,10 +375,14 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
+      const useSupabase = false // Force backend API
+      if (useSupabase) {
+        const { data: session } = await supabase.auth.getSession()
         if (!session?.session?.user) {
           showMessage('Please sign in to connect.', 'error')
           return
         }
+        const { error } = await supabase.rpc('request_connection', {
           p_mentor_id: mentorId,
           p_message: requestMessage || null,
           p_goals: requestGoals ? requestGoals.split(',').map(s => s.trim()) : null,
@@ -320,6 +393,7 @@ export default function MentorshipPage() {
         showMessage('Connection request sent successfully!', 'success')
         fetchConnections()
         setRequestMessage(''); setRequestGoals(''); setRequestTargetBandScore(''); setRequestFocusAreas('')
+      } else {
         const token = localStorage.getItem('access_token')
         if (!token) return
         const response = await fetch(`/api/v1/mentorship/connect`, {
@@ -340,6 +414,7 @@ export default function MentorshipPage() {
           showMessage('Connection request sent successfully!', 'success')
           fetchConnections()
           setRequestMessage(''); setRequestGoals(''); setRequestTargetBandScore(''); setRequestFocusAreas('')
+        } else {
           const raw = await response.text().catch(() => '')
           let detail = ''
           try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -381,6 +456,7 @@ export default function MentorshipPage() {
       if (response.ok) {
         showMessage('Profile updated successfully!', 'success')
         fetchConnections() // Refresh data
+      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -397,12 +473,16 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
+      const useSupabase = false // Force backend API
+      if (useSupabase) {
+        const { error } = await supabase
           .from('mentorship_connections')
           .update({ status: 'active' })
           .eq('id', connectionId)
         if (error) throw error
         showMessage('Connection request accepted!', 'success')
         fetchConnections()
+      } else {
         const token = localStorage.getItem('access_token')
         if (!token) return
         const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/accept`, {
@@ -412,6 +492,7 @@ export default function MentorshipPage() {
         if (response.ok) {
           showMessage('Connection request accepted!', 'success')
           fetchConnections()
+        } else {
           const raw = await response.text().catch(() => '')
           let detail = ''
           try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -431,12 +512,16 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
+      const useSupabase = false // Force backend API
+      if (useSupabase) {
+        const { error } = await supabase
           .from('mentorship_connections')
           .update({ status: 'cancelled' })
           .eq('id', connectionId)
         if (error) throw error
         showMessage('Connection request rejected.', 'success')
         fetchConnections()
+      } else {
         const token = localStorage.getItem('access_token')
         if (!token) return
         const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/reject`, {
@@ -446,6 +531,7 @@ export default function MentorshipPage() {
         if (response.ok) {
           showMessage('Connection request rejected.', 'success')
           fetchConnections()
+        } else {
           const raw = await response.text().catch(() => '')
           let detail = ''
           try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -469,12 +555,16 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
+      const useSupabase = false // Force backend API
+      if (useSupabase) {
+        const { error } = await supabase
           .from('mentorship_connections')
           .delete()
           .eq('id', connectionId)
         if (error) throw error
         showMessage('Connection deleted successfully.', 'success')
         fetchConnections()
+      } else {
         const token = localStorage.getItem('access_token')
         if (!token) return
         const response = await fetch(`/api/v1/mentorship/connections/${connectionId}`, {
@@ -487,6 +577,7 @@ export default function MentorshipPage() {
         if (response.ok) {
           showMessage('Connection deleted successfully.', 'success')
           fetchConnections()
+        } else {
           const errorData = await response.json()
           showMessage(`Failed to delete connection: ${errorData.detail}`, 'error')
         }
@@ -507,6 +598,8 @@ export default function MentorshipPage() {
   // Session Management Functions
   const fetchSessions = async () => {
     try {
+      const useSupabase = false // Force backend API
+      if (useSupabase) {
         // Not implemented in Supabase mode yet; avoid noisy error
         setSessions([])
         return
@@ -519,6 +612,7 @@ export default function MentorshipPage() {
       if (response.ok) {
         const data = await response.json()
         setSessions(data.sessions || [])
+      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -566,6 +660,7 @@ export default function MentorshipPage() {
           agenda: ''
         })
         fetchSessions()
+      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -603,6 +698,7 @@ export default function MentorshipPage() {
       if (response.ok) {
         showMessage('Session completed successfully!', 'success')
         fetchSessions()
+      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -642,6 +738,7 @@ export default function MentorshipPage() {
         setShowRatingModal(false)
         setRatingForm({ rating: 5, feedback: '' })
         fetchConnections()
+      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
@@ -680,6 +777,7 @@ export default function MentorshipPage() {
         showMessage('Work shared successfully!', 'success')
         setShowWorkShareModal(false)
         setWorkShareForm({ title: '', content: '', work_type: 'essay', description: '' })
+      } else {
         const raw = await response.text().catch(() => '')
         let detail = ''
         try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
