@@ -1,34 +1,7 @@
 // Vercel serverless function for mentorship connect
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-
-const users = [
-  {
-    id: 1,
-    email: 'admin1@edprep.ai',
-    username: 'admin1',
-    full_name: 'Admin User 1',
-    role: 'admin',
-  },
-  {
-    id: 2,
-    email: 'admin2@edprep.ai',
-    username: 'admin2',
-    full_name: 'Admin User 2',
-    role: 'admin',
-  },
-  {
-    id: 3,
-    email: 'admin3@edprep.ai',
-    username: 'admin3',
-    full_name: 'Admin User 3',
-    role: 'admin',
-  }
-]
-
-let connections = []
-
-let connectionIdCounter = 1
+import { users, connections, connectionIdCounter } from '../../../../data/shared'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
