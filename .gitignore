@@ -120,3 +120,10 @@ Thumbs.db
 
 # Archive directory
 ARCHIVE/
+
+# ML Models (too large for GitHub)
+backend/models/
+*.pkl
+*.joblib
+*.h5
+*.model
