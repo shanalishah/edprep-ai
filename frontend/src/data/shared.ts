@@ -62,10 +62,10 @@ export const users = [
 export const mentors = [
   {
     id: 1,
-    username: 'admin1',
-    full_name: 'Admin User 1',
-    email: 'admin1@edprep.ai',
-    role: 'admin',
+    username: 'mentor1',
+    full_name: 'Mentor One',
+    email: 'mentor1@edprep.ai',
+    role: 'mentor',
     target_band_score: 8.5,
     current_level: 'advanced',
     profile: {
@@ -83,10 +83,10 @@ export const mentors = [
   },
   {
     id: 2,
-    username: 'admin2',
-    full_name: 'Admin User 2',
-    email: 'admin2@edprep.ai',
-    role: 'admin',
+    username: 'mentor2',
+    full_name: 'Mentor Two',
+    email: 'mentor2@edprep.ai',
+    role: 'mentor',
     target_band_score: 8.0,
     current_level: 'advanced',
     profile: {
@@ -104,10 +104,10 @@ export const mentors = [
   },
   {
     id: 3,
-    username: 'admin3',
-    full_name: 'Admin User 3',
-    email: 'admin3@edprep.ai',
-    role: 'admin',
+    username: 'mentor3',
+    full_name: 'Mentor Three',
+    email: 'mentor3@edprep.ai',
+    role: 'mentor',
     target_band_score: 7.5,
     current_level: 'intermediate',
     profile: {
