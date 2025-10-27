@@ -1,0 +1,14 @@
+{
+  "name": "ielts-master-platform",
+  "version": "2.1.2",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm run start",
+    "lint": "cd frontend && npm run lint"
+  },
+  "workspaces": [
+    "frontend"
+  ]
+}
