@@ -16,17 +16,25 @@ const nextConfig = {
   experimental: {
     // Enable modern bundling
     esmExternals: true,
+    // Optimize bundle size
+    optimizeCss: true,
+    // Enable SWC minification
+    swcMinify: true,
   },
-  // Handle API routes properly - proxy to Railway backend
+  // Handle API routes properly - proxy to Railway backend only for AI features
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: 'https://web-production-4d7f.up.railway.app/api/:path*',
+        source: '/api/v1/learning/:path*',
+        destination: 'https://web-production-4d7f.up.railway.app/api/v1/learning/:path*',
+      },
+      {
+        source: '/api/v1/essays/:path*',
+        destination: 'https://web-production-4d7f.up.railway.app/api/v1/essays/:path*',
       },
     ]
   },
-  // Security headers
+  // Security and performance headers
   async headers() {
     return [
       {
@@ -43,6 +51,19 @@ const nextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
           },
         ],
       },
