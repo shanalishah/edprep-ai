@@ -292,7 +292,9 @@ export default function MentorshipPage() {
         })
         if (response.ok) {
           const data = await response.json()
-          setMentors(data.mentors || [])
+          // Filter out the current user from mentors list
+          const filteredMentors = (data.mentors || []).filter((mentor: Mentor) => mentor.id !== user?.id)
+          setMentors(filteredMentors)
         } else {
           const raw = await response.text().catch(() => '')
           let detail = ''

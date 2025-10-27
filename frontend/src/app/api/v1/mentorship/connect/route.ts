@@ -36,6 +36,14 @@ export async function POST(request: NextRequest) {
     const target_band_score = parseFloat(formData.get('target_band_score') as string || '7.5')
     const focus_areas = (formData.get('focus_areas') as string || '').split(',').filter(f => f.trim())
 
+    // Prevent self-connection
+    if (mentor_id === currentUser.id) {
+      return NextResponse.json(
+        { detail: 'You cannot connect with yourself' },
+        { status: 400 }
+      )
+    }
+
     // Find mentor
     const mentor = users.find(u => u.id === mentor_id)
     if (!mentor) {
