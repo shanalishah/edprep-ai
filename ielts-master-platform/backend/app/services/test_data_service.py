@@ -25,6 +25,11 @@ class TestDataService:
         """Get all available listening tests with audio files"""
         listening_tests = []
         
+        # Check if archive path exists
+        if not self.archive_path.exists():
+            logger.warning(f"Archive path does not exist: {self.archive_path}")
+            return []
+        
         # Scan Academic tests
         academic_path = self.cambridge_path / "Academic"
         for test_book in academic_path.iterdir():
@@ -69,6 +74,11 @@ class TestDataService:
     def get_reading_tests(self) -> List[Dict[str, Any]]:
         """Get all available reading tests"""
         reading_tests = []
+        
+        # Check if archive path exists
+        if not self.archive_path.exists():
+            logger.warning(f"Archive path does not exist: {self.archive_path}")
+            return []
         
         # Scan Academic tests
         academic_path = self.cambridge_path / "Academic"
