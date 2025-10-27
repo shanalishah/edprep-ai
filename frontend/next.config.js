@@ -9,7 +9,6 @@ const nextConfig = {
     NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP: 'false',
   },
   // Production optimizations
-  output: 'standalone',
   experimental: {
     esmExternals: true,
     swcMinify: true,
