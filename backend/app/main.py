@@ -183,22 +183,37 @@ async def login_user(
 ):
     """Login user"""
     try:
+        logger.info(f"🔍 Login attempt for username: {username}")
+        
         # Try to find user by email or username
         user = DatabaseManager.get_user_by_email(db, username)
         if not user:
             user = DatabaseManager.get_user_by_username(db, username)
         
-        if not user or not verify_password(password, user.hashed_password):
+        if not user:
+            logger.warning(f"❌ User not found: {username}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email/username or password"
+            )
+        
+        logger.info(f"✅ User found: {user.email}, is_active: {user.is_active}")
+        
+        if not verify_password(password, user.hashed_password):
+            logger.warning(f"❌ Password verification failed for: {username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email/username or password"
             )
         
         if not user.is_active:
+            logger.warning(f"❌ Account deactivated for: {username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Account is deactivated"
             )
+        
+        logger.info(f"✅ Login successful for: {username}")
         
         # Update last login
         from datetime import datetime

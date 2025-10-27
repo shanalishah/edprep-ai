@@ -5,22 +5,16 @@ const nextConfig = {
     domains: ['localhost', 'vercel.app', '*.vercel.app'],
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '',
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_AUTH_PROVIDER: process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'supabase',
-    NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP: process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'true',
+    NEXT_PUBLIC_AUTH_PROVIDER: 'backend',
+    NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP: 'false',
   },
-  // Optimize for Vercel deployment
+  // Production optimizations
   output: 'standalone',
   experimental: {
-    // Enable modern bundling
     esmExternals: true,
-    // Enable SWC minification
     swcMinify: true,
   },
-  // No external API proxies - everything uses Supabase or local API
-  // Security and performance headers
+  // Security headers for production
   async headers() {
     return [
       {
@@ -37,19 +31,6 @@ const nextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
-          },
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
-        source: '/api/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate',
           },
         ],
       },

@@ -1,1 +1,2 @@
-# No external dependencies needed for basic HTTP server
+bcrypt==4.0.1
+PyJWT==2.8.0

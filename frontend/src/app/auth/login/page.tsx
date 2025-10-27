@@ -48,7 +48,7 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       const provider = process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'backend'
-      if (provider === 'supabase') {
+      if (provider === 'supabase' && supabase) {
         const { data: auth, error } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password

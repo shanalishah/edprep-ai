@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../providers'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -254,49 +253,29 @@ export default function MentorshipPage() {
 
   const fetchMentors = async () => {
     try {
-      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
-      if (useSupabase) {
-        let query = supabase
-          .from('profiles')
-          .select('*')
-          .eq('role','mentor')
-          .eq('is_available_for_mentorship', true)
-
-        if (searchFilters.timezone) query = query.eq('timezone', searchFilters.timezone)
-        // simple contains on specializations if provided
-        if (searchFilters.specializations) {
-          // NOTE: for better search use full text or jsonb @> with exact array
-          query = query.contains('specializations', [searchFilters.specializations.split(',')[0].trim()])
-        }
-
-        const { data, error } = await query
-        if (error) throw error
-        setMentors((data as any) || [])
+      const token = localStorage.getItem('access_token')
+      if (!token) return
+      const queryParams = new URLSearchParams()
+      if (searchFilters.specializations) {
+        queryParams.append('specializations', JSON.stringify(searchFilters.specializations.split(',').map(s => s.trim())))
+      }
+      if (searchFilters.target_band_score) {
+        queryParams.append('target_band_score', searchFilters.target_band_score)
+      }
+      if (searchFilters.timezone) {
+        queryParams.append('timezone', searchFilters.timezone)
+      }
+      const response = await fetch(`/api/v1/mentorship/mentors?${queryParams.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setMentors(data.mentors || [])
       } else {
-        const token = localStorage.getItem('access_token')
-        if (!token) return
-        const queryParams = new URLSearchParams()
-        if (searchFilters.specializations) {
-          queryParams.append('specializations', JSON.stringify(searchFilters.specializations.split(',').map(s => s.trim())))
-        }
-        if (searchFilters.target_band_score) {
-          queryParams.append('target_band_score', searchFilters.target_band_score)
-        }
-        if (searchFilters.timezone) {
-          queryParams.append('timezone', searchFilters.timezone)
-        }
-        const response = await fetch(`/api/v1/mentorship/mentors?${queryParams.toString()}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        if (response.ok) {
-          const data = await response.json()
-          setMentors(data.mentors || [])
-        } else {
-          const raw = await response.text().catch(() => '')
-          let detail = ''
-          try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
-          showMessage(`Failed to fetch mentors: ${detail}`, 'error')
-        }
+        const raw = await response.text().catch(() => '')
+        let detail = ''
+        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+        showMessage(`Failed to fetch mentors: ${detail}`, 'error')
       }
     } catch (error) {
       console.error('Error fetching mentors:', error)
@@ -306,48 +285,6 @@ export default function MentorshipPage() {
 
   const fetchConnections = async () => {
     try {
-      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
-      if (useSupabase) {
-        const { data: sess } = await supabase.auth.getSession()
-        const uid = sess?.session?.user?.id
-        if (!uid) {
-          showMessage('Please sign in to view connections.', 'error')
-          return
-        }
-
-        const { data: conns, error } = await supabase
-          .from('mentorship_connections')
-          .select('*')
-          .or(`mentor_id.eq.${uid},mentee_id.eq.${uid}`)
-          .order('created_at', { ascending: false })
-        if (error) throw error
-
-        const userIds = Array.from(new Set((conns || []).flatMap((c: any) => [c.mentor_id, c.mentee_id])))
-        const { data: profs, error: perr } = await supabase
-          .from('profiles')
-          .select('id,username,full_name,email,role')
-          .in('id', userIds.length ? userIds : ['00000000-0000-0000-0000-000000000000'])
-        if (perr) throw perr
-
-        const idToProfile: Record<string, any> = {}
-        ;(profs || []).forEach((p: any) => { idToProfile[p.id] = p })
-        const transformed = (conns || []).map((c: any) => ({
-          id: c.id,
-          mentor_id: c.mentor_id,
-          mentee_id: c.mentee_id,
-          status: c.status,
-          connection_message: c.connection_message,
-          goals: c.goals || [],
-          target_band_score: c.target_band_score || 0,
-          focus_areas: c.focus_areas || [],
-          created_at: c.created_at,
-          mentor: idToProfile[c.mentor_id] || null,
-          mentee: idToProfile[c.mentee_id] || null,
-        }))
-        setConnections(transformed as any)
-        return
-      }
-
       const token = localStorage.getItem('access_token')
       if (!token) return
       const response = await fetch(`/api/v1/mentorship/connections`, {
@@ -596,7 +533,7 @@ export default function MentorshipPage() {
   // Session Management Functions
   const fetchSessions = async () => {
     try {
-      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      const useSupabase = false // Force backend API for local development
       if (useSupabase) {
         // Not implemented in Supabase mode yet; avoid noisy error
         setSessions([])
