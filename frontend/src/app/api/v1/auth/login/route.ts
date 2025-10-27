@@ -10,7 +10,7 @@ const users = [
     email: 'admin1@edprep.ai',
     username: 'admin1',
     full_name: 'Admin User 1',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // 'test'
+    password: '$2b$10$LgA4KTs01JITFrFPd/bJZe2agXwLuaiIt1MaHsORq.Ynmbfw/eMV6', // 'test'
     role: 'admin',
     is_active: true,
     is_verified: true,
@@ -29,7 +29,7 @@ const users = [
     email: 'admin2@edprep.ai',
     username: 'admin2',
     full_name: 'Admin User 2',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // 'test'
+    password: '$2b$10$LgA4KTs01JITFrFPd/bJZe2agXwLuaiIt1MaHsORq.Ynmbfw/eMV6', // 'test'
     role: 'admin',
     is_active: true,
     is_verified: true,
@@ -48,7 +48,7 @@ const users = [
     email: 'admin3@edprep.ai',
     username: 'admin3',
     full_name: 'Admin User 3',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // 'test'
+    password: '$2b$10$LgA4KTs01JITFrFPd/bJZe2agXwLuaiIt1MaHsORq.Ynmbfw/eMV6', // 'test'
     role: 'admin',
     is_active: true,
     is_verified: true,
