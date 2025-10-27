@@ -1,46 +1,7 @@
 // Vercel serverless function for connection details
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-
-const users = [
-  {
-    id: 1,
-    email: 'admin1@edprep.ai',
-    username: 'admin1',
-    full_name: 'Admin User 1',
-    role: 'admin',
-  },
-  {
-    id: 2,
-    email: 'admin2@edprep.ai',
-    username: 'admin2',
-    full_name: 'Admin User 2',
-    role: 'admin',
-  },
-  {
-    id: 3,
-    email: 'admin3@edprep.ai',
-    username: 'admin3',
-    full_name: 'Admin User 3',
-    role: 'admin',
-  }
-]
-
-const connections = [
-  {
-    id: 1,
-    mentor_id: 1,
-    mentee_id: 2,
-    status: 'active',
-    connection_message: "Let's work together on IELTS preparation!",
-    goals: ['Improve IELTS score', 'Get personalized feedback'],
-    target_band_score: 7.5,
-    focus_areas: ['Writing', 'Speaking'],
-    created_at: new Date().toISOString(),
-    mentor: users[0],
-    mentee: users[1]
-  }
-]
+import { users, getConnections } from '../../../../../../../data/shared'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -72,6 +33,7 @@ export async function GET(
     }
 
     const connectionId = parseInt(params.connectionId)
+    const connections = getConnections()
     const connection = connections.find(conn => conn.id === connectionId)
     
     if (!connection) {
@@ -113,3 +75,4 @@ export async function OPTIONS() {
     },
   })
 }
+

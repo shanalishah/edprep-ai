@@ -164,3 +164,4 @@ curl -X POST https://your-project.supabase.co/auth/v1/token \
 ---
 
 **🎯 Goal**: Achieve <2s page loads and <1s interactions for core features**
+

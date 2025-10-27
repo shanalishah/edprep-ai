@@ -31,10 +31,10 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const mentor_id = parseInt(formData.get('mentor_id') as string)
-    const message = formData.get('message') as string
-    const goals = JSON.parse(formData.get('goals') as string || '[]')
+    const message = formData.get('connection_message') as string
+    const goals = (formData.get('goals') as string || '').split(',').filter(g => g.trim())
     const target_band_score = parseFloat(formData.get('target_band_score') as string || '7.5')
-    const focus_areas = JSON.parse(formData.get('focus_areas') as string || '[]')
+    const focus_areas = (formData.get('focus_areas') as string || '').split(',').filter(f => f.trim())
 
     // Find mentor
     const mentor = users.find(u => u.id === mentor_id)

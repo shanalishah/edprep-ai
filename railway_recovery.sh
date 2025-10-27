@@ -142,3 +142,4 @@ echo "Mentor: dr.emma.chen@edprep.ai / mentor123"
 echo "Tutor: ms.lisa.patel@edprep.ai / tutor123"
 echo ""
 echo "✅ Recovery complete!"
+

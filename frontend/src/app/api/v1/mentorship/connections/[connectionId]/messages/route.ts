@@ -1,76 +1,7 @@
 // Vercel serverless function for messages
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-
-const users = [
-  {
-    id: 1,
-    email: 'admin1@edprep.ai',
-    username: 'admin1',
-    full_name: 'Admin User 1',
-    role: 'admin',
-  },
-  {
-    id: 2,
-    email: 'admin2@edprep.ai',
-    username: 'admin2',
-    full_name: 'Admin User 2',
-    role: 'admin',
-  },
-  {
-    id: 3,
-    email: 'admin3@edprep.ai',
-    username: 'admin3',
-    full_name: 'Admin User 3',
-    role: 'admin',
-  }
-]
-
-const connections = [
-  {
-    id: 1,
-    mentor_id: 1,
-    mentee_id: 2,
-    status: 'active',
-  }
-]
-
-let messages = [
-  {
-    id: 1,
-    connection_id: 1,
-    sender_id: 1,
-    message_type: 'text',
-    content: 'Welcome! I\'m excited to help you with your IELTS preparation.',
-    file_url: null,
-    file_name: null,
-    file_size: null,
-    is_read: false,
-    read_at: null,
-    is_edited: false,
-    edited_at: null,
-    created_at: new Date().toISOString(),
-    sender: users[0]
-  },
-  {
-    id: 2,
-    connection_id: 1,
-    sender_id: 2,
-    message_type: 'text',
-    content: 'Thank you! I\'m looking forward to improving my writing skills.',
-    file_url: null,
-    file_name: null,
-    file_size: null,
-    is_read: false,
-    read_at: null,
-    is_edited: false,
-    edited_at: null,
-    created_at: new Date().toISOString(),
-    sender: users[1]
-  }
-]
-
-let messageIdCounter = 3
+import { users, getConnections, getMessages, addMessage } from '../../../../../../../data/shared'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -102,6 +33,7 @@ export async function GET(
     }
 
     const connectionId = parseInt(params.connectionId)
+    const connections = getConnections()
     const connection = connections.find(conn => conn.id === connectionId)
     
     if (!connection) {
@@ -119,7 +51,7 @@ export async function GET(
       )
     }
 
-    const connectionMessages = messages
+    const connectionMessages = getMessages()
       .filter(msg => msg.connection_id === connectionId)
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
@@ -153,6 +85,7 @@ export async function POST(
     }
 
     const connectionId = parseInt(params.connectionId)
+    const connections = getConnections()
     const connection = connections.find(conn => conn.id === connectionId)
     
     if (!connection) {
@@ -182,7 +115,6 @@ export async function POST(
     }
 
     const newMessage = {
-      id: messageIdCounter++,
       connection_id: connectionId,
       sender_id: currentUser.id,
       message_type,
@@ -198,12 +130,12 @@ export async function POST(
       sender: currentUser
     }
 
-    messages.push(newMessage)
+    const addedMessage = addMessage(newMessage)
 
     return NextResponse.json({
       success: true,
       message: 'Message sent successfully',
-      data: newMessage
+      data: addedMessage
     })
 
   } catch (error) {
@@ -225,3 +157,4 @@ export async function OPTIONS() {
     },
   })
 }
+

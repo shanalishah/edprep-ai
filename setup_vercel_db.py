@@ -121,3 +121,4 @@ def setup_vercel_database():
 if __name__ == "__main__":
     success = setup_vercel_database()
     sys.exit(0 if success else 1)
+
