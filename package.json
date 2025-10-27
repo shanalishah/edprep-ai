@@ -12,6 +12,7 @@
   "workspaces": [
     "frontend"
   ],
-  "dependencies": {},
-  "devDependencies": {}
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
