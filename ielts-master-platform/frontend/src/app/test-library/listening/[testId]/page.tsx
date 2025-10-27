@@ -607,7 +607,8 @@ export default function ListeningTestPage({ params }: { params: { testId: string
                           handleSeekStart()
                           
                           const handleMouseMove = (e: MouseEvent) => {
-                            const rect = e.currentTarget.parentElement?.parentElement?.getBoundingClientRect()
+                            const target = e.currentTarget as HTMLElement
+                            const rect = target.parentElement?.parentElement?.getBoundingClientRect()
                             if (rect) {
                               const clickX = e.clientX - rect.left
                               const percentage = Math.max(0, Math.min(1, clickX / rect.width))

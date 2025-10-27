@@ -349,7 +349,7 @@ export default function SpeakingTestsPage() {
                 <h4 className="text-sm font-semibold text-gray-700 mb-2">Topic Covered:</h4>
                 <div className="flex flex-wrap gap-1">
                   <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
-                    {test.topic}
+                    {test.topics?.[0] || 'General Topics'}
                   </span>
                 </div>
               </div>

@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd frontend && npm run build",
+  "installCommand": "cd frontend && npm ci",
+  "framework": "nextjs",
+  "outputDirectory": "frontend/.next",
+  "rootDirectory": "frontend",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://web-production-4d7f.up.railway.app",
+    "NEXT_PUBLIC_AUTH_PROVIDER": "backend",
+    "NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP": "false"
+  }
+}
