@@ -306,13 +306,53 @@ export default function MentorshipPage() {
 
   const fetchConnections = async () => {
     try {
+      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      if (useSupabase) {
+        const { data: sess } = await supabase.auth.getSession()
+        const uid = sess?.session?.user?.id
+        if (!uid) {
+          showMessage('Please sign in to view connections.', 'error')
+          return
+        }
+
+        const { data: conns, error } = await supabase
+          .from('mentorship_connections')
+          .select('*')
+          .or(`mentor_id.eq.${uid},mentee_id.eq.${uid}`)
+          .order('created_at', { ascending: false })
+        if (error) throw error
+
+        const userIds = Array.from(new Set((conns || []).flatMap((c: any) => [c.mentor_id, c.mentee_id])))
+        const { data: profs, error: perr } = await supabase
+          .from('profiles')
+          .select('id,username,full_name,email,role')
+          .in('id', userIds.length ? userIds : ['00000000-0000-0000-0000-000000000000'])
+        if (perr) throw perr
+
+        const idToProfile: Record<string, any> = {}
+        ;(profs || []).forEach((p: any) => { idToProfile[p.id] = p })
+        const transformed = (conns || []).map((c: any) => ({
+          id: c.id,
+          mentor_id: c.mentor_id,
+          mentee_id: c.mentee_id,
+          status: c.status,
+          connection_message: c.connection_message,
+          goals: c.goals || [],
+          target_band_score: c.target_band_score || 0,
+          focus_areas: c.focus_areas || [],
+          created_at: c.created_at,
+          mentor: idToProfile[c.mentor_id] || null,
+          mentee: idToProfile[c.mentee_id] || null,
+        }))
+        setConnections(transformed as any)
+        return
+      }
+
       const token = localStorage.getItem('access_token')
       if (!token) return
-
       const response = await fetch(`/api/v1/mentorship/connections`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-
       if (response.ok) {
         const data = await response.json()
         setConnections(data.connections || [])
@@ -431,22 +471,31 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
-      const token = localStorage.getItem('access_token')
-      if (!token) return
-
-      const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/accept`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-
-      if (response.ok) {
+      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      if (useSupabase) {
+        const { error } = await supabase
+          .from('mentorship_connections')
+          .update({ status: 'active' })
+          .eq('id', connectionId)
+        if (error) throw error
         showMessage('Connection request accepted!', 'success')
         fetchConnections()
       } else {
-        const raw = await response.text().catch(() => '')
-        let detail = ''
-        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
-        showMessage(`Failed to accept request: ${detail}`, 'error')
+        const token = localStorage.getItem('access_token')
+        if (!token) return
+        const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/accept`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (response.ok) {
+          showMessage('Connection request accepted!', 'success')
+          fetchConnections()
+        } else {
+          const raw = await response.text().catch(() => '')
+          let detail = ''
+          try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+          showMessage(`Failed to accept request: ${detail}`, 'error')
+        }
       }
     } catch (error) {
       console.error('Error accepting request:', error)
@@ -461,22 +510,31 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
-      const token = localStorage.getItem('access_token')
-      if (!token) return
-
-      const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/reject`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-
-      if (response.ok) {
+      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      if (useSupabase) {
+        const { error } = await supabase
+          .from('mentorship_connections')
+          .update({ status: 'cancelled' })
+          .eq('id', connectionId)
+        if (error) throw error
         showMessage('Connection request rejected.', 'success')
         fetchConnections()
       } else {
-        const raw = await response.text().catch(() => '')
-        let detail = ''
-        try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
-        showMessage(`Failed to reject request: ${detail}`, 'error')
+        const token = localStorage.getItem('access_token')
+        if (!token) return
+        const response = await fetch(`/api/v1/mentorship/connections/${connectionId}/reject`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (response.ok) {
+          showMessage('Connection request rejected.', 'success')
+          fetchConnections()
+        } else {
+          const raw = await response.text().catch(() => '')
+          let detail = ''
+          try { detail = JSON.parse(raw)?.detail ?? raw } catch { detail = raw || `${response.status} ${response.statusText}` }
+          showMessage(`Failed to reject request: ${detail}`, 'error')
+        }
       }
     } catch (error) {
       console.error('Error rejecting request:', error)
@@ -495,23 +553,32 @@ export default function MentorshipPage() {
     setActionLoadingState(actionKey, true)
     
     try {
-      const token = localStorage.getItem('access_token')
-      if (!token) return
-
-      const response = await fetch(`/api/v1/mentorship/connections/${connectionId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (response.ok) {
+      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      if (useSupabase) {
+        const { error } = await supabase
+          .from('mentorship_connections')
+          .delete()
+          .eq('id', connectionId)
+        if (error) throw error
         showMessage('Connection deleted successfully.', 'success')
         fetchConnections()
       } else {
-        const errorData = await response.json()
-        showMessage(`Failed to delete connection: ${errorData.detail}`, 'error')
+        const token = localStorage.getItem('access_token')
+        if (!token) return
+        const response = await fetch(`/api/v1/mentorship/connections/${connectionId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        if (response.ok) {
+          showMessage('Connection deleted successfully.', 'success')
+          fetchConnections()
+        } else {
+          const errorData = await response.json()
+          showMessage(`Failed to delete connection: ${errorData.detail}`, 'error')
+        }
       }
     } catch (error) {
       console.error('Error deleting connection:', error)
@@ -529,13 +596,17 @@ export default function MentorshipPage() {
   // Session Management Functions
   const fetchSessions = async () => {
     try {
+      const useSupabase = (process.env.NEXT_PUBLIC_USE_SUPABASE_MENTORSHIP || 'false') === 'true'
+      if (useSupabase) {
+        // Not implemented in Supabase mode yet; avoid noisy error
+        setSessions([])
+        return
+      }
       const token = localStorage.getItem('access_token')
       if (!token) return
-
       const response = await fetch(`/api/v1/mentorship/sessions/upcoming`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-
       if (response.ok) {
         const data = await response.json()
         setSessions(data.sessions || [])
