@@ -73,10 +73,11 @@ export default function LoginPage() {
         toast.success('Welcome back!')
         router.push('/dashboard')
       } else {
+        // Use Railway backend for authentication
         const formData = new URLSearchParams()
         formData.append('username', data.email)
         formData.append('password', data.password)
-        console.log('Sending login request with:', { email: data.email, password: '***' }) // Debug log
+        console.log('Sending login request to Railway backend:', { email: data.email, password: '***' }) // Debug log
         const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.AUTH_LOGIN, true), {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
