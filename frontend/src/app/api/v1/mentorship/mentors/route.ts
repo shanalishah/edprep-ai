@@ -1,7 +1,7 @@
 // Vercel serverless function for mentorship mentors
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { users, mentors } from '../../../../../../frontend/src/data/shared'
+import { users, mentors } from '../../../../data/shared'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
