@@ -109,3 +109,6 @@ backend/models/
 *.joblib
 *.h5
 *.model
+
+# Large PDF files (too large for GitHub)
+*.pdf
