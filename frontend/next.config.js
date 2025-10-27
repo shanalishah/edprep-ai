@@ -5,7 +5,7 @@ const nextConfig = {
     domains: ['localhost', 'vercel.app', '*.vercel.app'],
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '',
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_AUTH_PROVIDER: process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'supabase',
@@ -21,19 +21,7 @@ const nextConfig = {
     // Enable SWC minification
     swcMinify: true,
   },
-  // Handle API routes properly - proxy to Railway backend only for AI features
-  async rewrites() {
-    return [
-      {
-        source: '/api/v1/learning/:path*',
-        destination: 'https://web-production-4d7f.up.railway.app/api/v1/learning/:path*',
-      },
-      {
-        source: '/api/v1/essays/:path*',
-        destination: 'https://web-production-4d7f.up.railway.app/api/v1/essays/:path*',
-      },
-    ]
-  },
+  // No external API proxies - everything uses Supabase or local API
   // Security and performance headers
   async headers() {
     return [

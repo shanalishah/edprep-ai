@@ -15,14 +15,94 @@ class handler(BaseHTTPRequestHandler):
                 "status": "healthy", 
                 "service": "IELTS Master Platform", 
                 "version": "2.1.2",
-                "note": "Fallback API - Railway backend may be down"
+                "note": "Vercel + Supabase deployment - Railway removed"
+            }
+            self.wfile.write(json.dumps(response).encode())
+        elif self.path == '/api/v1/mentorship/mentors':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {
+                "success": True,
+                "mentors": [
+                    {
+                        "id": 1,
+                        "username": "dr.emma.chen",
+                        "full_name": "Dr. Emma Chen",
+                        "email": "dr.emma.chen@edprep.ai",
+                        "role": "mentor",
+                        "is_available": True
+                    }
+                ],
+                "count": 1,
+                "note": "Use Supabase for real mentor data"
+            }
+            self.wfile.write(json.dumps(response).encode())
+        elif self.path.startswith('/api/v1/mentorship/connections/') and '/messages' in self.path:
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {
+                "messages": [
+                    {
+                        "id": 1,
+                        "connection_id": 1,
+                        "sender_id": 2,
+                        "message_type": "text",
+                        "content": "Hello Dr. Emma! I'm excited to start our mentorship journey.",
+                        "is_read": False,
+                        "is_edited": False,
+                        "created_at": "2025-01-01T00:00:00",
+                        "sender": {
+                            "id": 2,
+                            "username": "ahmed_hassan",
+                            "full_name": "Ahmed Hassan",
+                            "email": "ahmed.hassan@student.com",
+                            "role": "student"
+                        }
+                    }
+                ],
+                "note": "Use Supabase for real messages"
+            }
+            self.wfile.write(json.dumps(response).encode())
+        elif self.path.startswith('/api/v1/mentorship/connections/'):
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {
+                "connection": {
+                    "id": 1,
+                    "mentor_id": 1,
+                    "mentee_id": 2,
+                    "status": "active",
+                    "connection_message": "Test connection",
+                    "goals": ["Improve IELTS score"],
+                    "target_band_score": 7.5,
+                    "focus_areas": ["Writing"],
+                    "mentor": {
+                        "id": 1,
+                        "username": "dr.emma.chen",
+                        "full_name": "Dr. Emma Chen",
+                        "email": "dr.emma.chen@edprep.ai",
+                        "role": "mentor"
+                    },
+                    "mentee": {
+                        "id": 2,
+                        "username": "ahmed_hassan",
+                        "full_name": "Ahmed Hassan",
+                        "email": "ahmed.hassan@student.com",
+                        "role": "student"
+                    },
+                    "created_at": "2025-01-01T00:00:00"
+                },
+                "note": "Use Supabase for real connections"
             }
             self.wfile.write(json.dumps(response).encode())
         else:
             self.send_response(404)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            response = {"error": "Not found", "note": "This is a fallback API"}
+            response = {"error": "Not found", "note": "Use Supabase for real data"}
             self.wfile.write(json.dumps(response).encode())
 
     def do_POST(self):
@@ -43,14 +123,39 @@ class handler(BaseHTTPRequestHandler):
                     "full_name": "Fallback User",
                     "role": "student"
                 },
-                "note": "Fallback login - use Supabase for real authentication"
+                "note": "Use Supabase for real authentication"
+            }
+            self.wfile.write(json.dumps(response).encode())
+        elif self.path.startswith('/api/v1/mentorship/connections/') and '/messages' in self.path:
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {
+                "data": {
+                    "id": 3,
+                    "connection_id": 1,
+                    "sender_id": 2,
+                    "message_type": "text",
+                    "content": "Test message",
+                    "is_read": False,
+                    "is_edited": False,
+                    "created_at": "2025-01-01T00:10:00",
+                    "sender": {
+                        "id": 2,
+                        "username": "ahmed_hassan",
+                        "full_name": "Ahmed Hassan",
+                        "email": "ahmed.hassan@student.com",
+                        "role": "student"
+                    }
+                },
+                "note": "Use Supabase for real messages"
             }
             self.wfile.write(json.dumps(response).encode())
         else:
             self.send_response(404)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            response = {"error": "Not found", "note": "This is a fallback API"}
+            response = {"error": "Not found", "note": "Use Supabase for real data"}
             self.wfile.write(json.dumps(response).encode())
 
     def do_OPTIONS(self):
