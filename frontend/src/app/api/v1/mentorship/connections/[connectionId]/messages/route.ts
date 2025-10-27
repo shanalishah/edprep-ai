@@ -1,7 +1,7 @@
 // Vercel serverless function for messages
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { users, getConnections, getMessages, addMessage } from '../../../../../../data/shared'
+import { users, getConnections, getMessages, addMessage } from '@/lib/api-data'
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
