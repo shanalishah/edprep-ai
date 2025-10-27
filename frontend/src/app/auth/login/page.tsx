@@ -21,6 +21,7 @@ import {
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { supabase } from '../../../lib/supabaseClient'
+import { getApiUrl, API_CONFIG } from '../../../lib/api-config'
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
@@ -76,7 +77,7 @@ export default function LoginPage() {
         formData.append('username', data.email)
         formData.append('password', data.password)
         console.log('Sending login request with:', { email: data.email, password: '***' }) // Debug log
-        const response = await fetch(`/api/v1/auth/login`, {
+        const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.AUTH_LOGIN, true), {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: formData.toString(),
