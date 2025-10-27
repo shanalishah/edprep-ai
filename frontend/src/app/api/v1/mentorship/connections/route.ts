@@ -27,21 +27,7 @@ const users = [
   }
 ]
 
-const connections = [
-  {
-    id: 1,
-    mentor_id: 1,
-    mentee_id: 2,
-    status: 'active',
-    connection_message: "Let's work together on IELTS preparation!",
-    goals: ['Improve IELTS score', 'Get personalized feedback'],
-    target_band_score: 7.5,
-    focus_areas: ['Writing', 'Speaking'],
-    created_at: new Date().toISOString(),
-    mentor: users[0],
-    mentee: users[1]
-  }
-]
+const connections = []
 
 function getCurrentUser(authHeader: string) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
