@@ -1,6 +1,4 @@
-# IELTS Master Platform - Clean & Optimized
-
-## 🚀 Quick Start
+# IELTS Master Platform - WIP
 
 ### Frontend (Vercel)
 ```bash
@@ -16,7 +14,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-## 📁 Clean Project Structure
+## Clean Project Structure
 
 ```
 ielts-master-platform/
@@ -37,16 +35,7 @@ ielts-master-platform/
 └── .gitignore
 ```
 
-## 🌐 Deployment
+## Deployment
 
 - **Frontend**: Deploy to Vercel (automatic from GitHub)
 - **Backend**: Deploy to Railway (automatic from GitHub)
-
-## ✨ Features
-
-- **Clean Architecture**: Centralized imports, optimized structure
-- **Fast Performance**: Removed unnecessary files and dependencies
-- **Modern Stack**: Next.js 14 + FastAPI + TypeScript
-- **Production Ready**: Optimized for Vercel + Railway deployment
-
-
